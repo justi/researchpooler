@@ -17,8 +17,9 @@ for year in range(2006, 2024):
     url = "https://proceedings.neurips.cc/paper_files/paper/%d" % (year,)
     print("downloading proceedings from NeurIPS year %d..." % (year,))
 
+    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
     try:
-        with urllib.request.urlopen(url) as f:
+        with urllib.request.urlopen(req) as f:
             s = f.read()
     except Exception as e:
         print("error fetching year %d: %s, skipping..." % (year, e))
@@ -27,30 +28,32 @@ for year in range(2006, 2024):
     print("done. Parsing...")
     soup = BeautifulSoup(s, 'html.parser')
 
-    publication_section = soup.find('div', {'class': 'container-fluid'})
-    if not publication_section:
-        warnings.append("no publication section found for year %d" % (year,))
+    paper_list = soup.find('ul', {'class': 'paper-list'})
+    if not paper_list:
+        warnings.append("no paper-list found for year %d" % (year,))
         continue
 
     venue = 'NeurIPS %d' % (year,)
     old_count = len(pubs)
 
-    for entry in publication_section.find_all('li', {'class': 'none'}):
+    for entry in paper_list.find_all('li'):
         new_pub = {}
 
         title_tag = entry.find('a', {'title': 'paper title'})
-        if title_tag:
-            new_pub['title'] = title_tag.text.strip()
+        if not title_tag:
+            continue
 
-        authors_tag = entry.find('i')
+        new_pub['title'] = title_tag.text.strip()
+        new_pub['pdf'] = 'https://proceedings.neurips.cc' + title_tag['href']
+
+        authors_tag = entry.find('span', {'class': 'paper-authors'})
         if authors_tag:
             authors = authors_tag.text.strip().split(',')
             new_pub['authors'] = [author.strip() for author in authors]
 
-        if new_pub:
-            new_pub['venue'] = venue
-            new_pub['year'] = year
-            pubs.append(new_pub)
+        new_pub['venue'] = venue
+        new_pub['year'] = year
+        pubs.append(new_pub)
 
     print("read in %d publications for year %d." % (len(pubs) - old_count, year))
 
