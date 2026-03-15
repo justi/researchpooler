@@ -65,9 +65,7 @@ def stringToWordDictionary(str):
     #cid is some kind of artifact from the pdf conversion that occurs very often
     stopwords.extend(['cid'])
     
-    keys = d.keys()
-    for k in keys:
-        if k in stopwords: 
-            del d[k]
+    for k in stopwords:
+        d.pop(k, None)
     
     return d
