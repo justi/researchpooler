@@ -7,13 +7,14 @@ pickle in current directory called pubs_nips.
 """
 
 import urllib.request
+from datetime import datetime
 from bs4 import BeautifulSoup
 from repool_util import savePubs
 
 pubs = []
 warnings = []
 
-for year in range(2006, 2024):
+for year in range(2006, datetime.now().year + 1):
     url = "https://proceedings.neurips.cc/paper_files/paper/%d" % (year,)
     print("downloading proceedings from NeurIPS year %d..." % (year,))
 
