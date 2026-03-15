@@ -18,27 +18,45 @@ AVAILABLE CONFERENCES
 -------------------------------------------------------------------------------
 Run any scraper to generate its pickle database:
 
-  Scraper                      Conference   Source                      Years       Papers
-  -------------------------    ---------    -------------------------   ----------  ------
-  nips_download_parse.py       NeurIPS      proceedings.neurips.cc      2006-2024   21,859
-  acl_download_parse.py        ACL          aclanthology.org            2000-2025   21,490
-  emnlp_download_parse.py      EMNLP        aclanthology.org            2000-2025   20,646
-  cvpr_download_parse.py       CVPR         openaccess.thecvf.com       2013-2025   18,452
-  aaai_download_parse.py       AAAI         ojs.aaai.org                2019-2025   15,097
-  icml_download_parse.py       ICML         proceedings.mlr.press       2013-2025   14,281
-  ijcai_download_parse.py      IJCAI        ijcai.org                   2013-2025    9,940
-  iccv_download_parse.py       ICCV         openaccess.thecvf.com       2013-2025    9,145
-  naacl_download_parse.py      NAACL        aclanthology.org            2000-2025    8,925
-  coling_download_parse.py     COLING       aclanthology.org            2000-2025    8,740
-  eccv_download_parse.py       ECCV         ecva.net                    2018-2024    6,166
-  aistats_download_parse.py    AISTATS      proceedings.mlr.press       2010-2025    4,613
-  wacv_download_parse.py       WACV         openaccess.thecvf.com       2020-2026    4,435
-  eacl_download_parse.py       EACL         aclanthology.org            2003-2024    3,138
-  colt_download_parse.py       COLT         proceedings.mlr.press       2011-2025    1,598
-  corl_download_parse.py       CoRL         proceedings.mlr.press       2017-2025    1,490
-  uai_download_parse.py        UAI          proceedings.mlr.press       2019-2025    1,368
-  alt_download_parse.py        ALT          proceedings.mlr.press       2017-2025      381
-                                                                        TOTAL     171,764
+  Scraper                        Conference    Source                      Years       Papers
+  ----------------------------   -----------   -------------------------   ---------   ------
+  nips_download_parse.py         NeurIPS       proceedings.neurips.cc      2006-2024   21,859
+  acl_download_parse.py          ACL           aclanthology.org            2000-2025   21,490
+  emnlp_download_parse.py        EMNLP         aclanthology.org            2000-2025   20,646
+  cvpr_download_parse.py         CVPR          openaccess.thecvf.com       2013-2025   18,452
+  aaai_download_parse.py         AAAI          ojs.aaai.org                2019-2025   15,097
+  icml_download_parse.py         ICML          proceedings.mlr.press       2013-2025   14,281
+  iclr_download_parse.py         ICLR          openreview.net              2018-2025   11,015
+  ijcai_download_parse.py        IJCAI         ijcai.org                   2013-2025    9,940
+  iccv_download_parse.py         ICCV          openaccess.thecvf.com       2013-2025    9,145
+  naacl_download_parse.py        NAACL         aclanthology.org            2000-2025    8,925
+  interspeech_download_parse.py  INTERSPEECH   isca-archive.org            2016-2024    8,785
+  coling_download_parse.py       COLING        aclanthology.org            2000-2025    8,740
+  eccv_download_parse.py         ECCV          ecva.net                    2018-2024    6,166
+  ijcnlp_download_parse.py      IJCNLP        aclanthology.org            2005-2025    5,337
+  aistats_download_parse.py      AISTATS       proceedings.mlr.press       2010-2025    4,613
+  wacv_download_parse.py         WACV          openaccess.thecvf.com       2020-2026    4,435
+  jmlr_download_parse.py         JMLR          jmlr.org                    2000-2025    4,135
+  semeval_download_parse.py      SemEval       aclanthology.org            2007-2025    3,217
+  eacl_download_parse.py         EACL          aclanthology.org            2003-2024    3,138
+  miccai_download_parse.py       MICCAI        papers.miccai.org           2024-2025    1,883
+  colt_download_parse.py         COLT          proceedings.mlr.press       2011-2025    1,598
+  conll_download_parse.py        CoNLL         aclanthology.org            2000-2025    1,547
+  corl_download_parse.py         CoRL          proceedings.mlr.press       2017-2025    1,490
+  rss_download_parse.py          RSS           roboticsproceedings.org     2005-2025    1,469
+  uai_download_parse.py          UAI           proceedings.mlr.press       2019-2025    1,368
+  aacl_download_parse.py         AACL          aclanthology.org            2020-2025      938
+  acml_download_parse.py         ACML          proceedings.mlr.press       2010-2024      834
+  nsdi_download_parse.py         NSDI          usenix.org                  2012-2025      821
+  l4dc_download_parse.py         L4DC          proceedings.mlr.press       2020-2025      669
+  midl_download_parse.py         MIDL          proceedings.mlr.press       2019-2024      504
+  osdi_download_parse.py         OSDI          usenix.org                  2012-2025      472
+  alt_download_parse.py          ALT           proceedings.mlr.press       2017-2025      381
+  mlhc_download_parse.py         MLHC          proceedings.mlr.press       2016-2025      323
+  pgm_download_parse.py          PGM           proceedings.mlr.press       2016-2024      222
+  clear_download_parse.py        CLeaR         proceedings.mlr.press       2022-2025      190
+  automl_download_parse.py       AutoML        proceedings.mlr.press       2016-2025       97
+                                                                           TOTAL      214,222
 
 -------------------------------------------------------------------------------
 USAGE
