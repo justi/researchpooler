@@ -20,27 +20,18 @@ for i, p in enumerate(pubs):
     # search to try to look up a link for the pdf first.
     if 'pdf' in p and 'pdf_text' not in p:
 
-        # try to open the PDF from downloaded location
+        # convert abstract page URL to direct PDF URL
+        pdf_url = p['pdf'].replace('-Abstract-Conference.html', '-Paper-Conference.pdf').replace('/hash/', '/file/')
+
         processed = False
         try:
-            floc = p['pdf'].index('NIPS')
-            fname = p['pdf'][floc:]
-            txt = convertPDF('downloads/'+fname)
+            print('downloading pdf for [%s] and parsing...' % (p.get('title', 'an un-titled paper')))
+            txt = convertPDF(pdf_url)
             processed = True
-            print('found %s in file!' % (p['title'],))
+            print('processed!')
         except:
-            pass
-
-        if not processed:
-            # download the PDF and convert to text
-            try:
-                print('downloading pdf for [%s] and parsing...' % (p.get('title', 'an un-titled paper')))
-                txt = convertPDF(p['pdf'])
-                processed = True
-                print('processed from url!')
-            except:
-                print('error: unable to open download the pdf from %s' % (p['pdf'],))
-                print('skipping...')
+            print('error: unable to download the pdf from %s' % (pdf_url,))
+            print('skipping...')
 
         if processed:
             # convert to bag of words and store

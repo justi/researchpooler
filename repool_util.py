@@ -59,7 +59,7 @@ def stringToWordDictionary(str):
     stopwords = ['the', 'and', 'for', 'that', 'can', 'this', 'which', \
                  'where', 'are', 'from', 'our', 'not', 'with', 'use', \
                  'then', 'than', 'but', 'have', 'was', 'were', 'these', \
-                 'each', 'used', 'set', 'such', 'using', 'when', 'those' \
+                 'each', 'used', 'set', 'such', 'using', 'when', 'those',
                  'may', 'also']
     
     #cid is some kind of artifact from the pdf conversion that occurs very often
