@@ -1,21 +1,20 @@
 """ Functions: useful general utils """
 
-import cPickle
+import pickle
 import re
-from os import startfile
+import webbrowser
 
 def savePubs(filename, pubs_to_save):
-    """ 
+    """
     save a list of publications into a file using Python's pickle
     filename: string
     pubs_to_save: List of Publication objects
-    
+
     returns nothing
     """
-    
-    file = open(filename, 'w')
-    cPickle.dump(pubs_to_save, file)
-    file.close()
+
+    with open(filename, 'wb') as f:
+        pickle.dump(pubs_to_save, f)
 
 def loadPubs(filename):
     """
@@ -23,23 +22,22 @@ def loadPubs(filename):
     filename: string
     returns list of dictionaries, each representing a Publication
     """
-    
-    unpicklefile = open(filename, 'r')
-    pubs = cPickle.load(unpicklefile)
-    unpicklefile.close()
+
+    with open(filename, 'rb') as f:
+        pubs = pickle.load(f)
     return pubs
-    
+
 def openPDFs(pdf_lst):
     """
-    uses an os call to open a list of pdfs
+    uses webbrowser to open a list of pdfs
     pdf_lst: list of strings: paths (or urls) of pdfs to open
     """
     if len(pdf_lst)>10:
-        print "more than 10? that can't be right. Request denied."
+        print("more than 10? that can't be right. Request denied.")
         return
-        
+
     for x in pdf_lst:
-        startfile(x)
+        webbrowser.open(x)
         
 def stringToWordDictionary(str):
     """

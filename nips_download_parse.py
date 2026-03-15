@@ -1,117 +1,70 @@
 """
 Standalone helper script.
 
-Parses NIPS proceedings for years 2003-2010, creates list of dictionaries
-that store information about each publication, and saves the result as a 
+Parses NeurIPS proceedings, creates list of dictionaries
+that store information about each publication, and saves the result as a
 pickle in current directory called pubs_nips.
 """
 
-import urllib
-from BeautifulSoup import BeautifulSoup, Tag, NavigableString
+import urllib.request
+from bs4 import BeautifulSoup
 from repool_util import savePubs
 
 pubs = []
 warnings = []
-for num in range(16, 24):
-    year = 1987 + num
-    
-    url = "http://books.nips.cc/nips%d.html" % (num,)
-    print "downloading proceedings from NIPS year %d..." % (year,)
-    f = urllib.urlopen(url)
-    s = f.read()
-    f.close()
-    
-    print "done. Parsing..."
-    soup = BeautifulSoup(s)
-    soup = soup.find('table', {'width' : '600'}) # find the main table HTML
-    soup = soup.contents[0].contents[0] # descend down <tr> and then <td>
-    
-    # iterate over this giant linear dump they have on the proceedings site
-    venue = 'NIPS %d' % (year,)
-    new_pub = {}
+
+for year in range(2006, 2024):
+    url = "https://proceedings.neurips.cc/paper_files/paper/%d" % (year,)
+    print("downloading proceedings from NeurIPS year %d..." % (year,))
+
+    try:
+        with urllib.request.urlopen(url) as f:
+            s = f.read()
+    except Exception as e:
+        print("error fetching year %d: %s, skipping..." % (year, e))
+        continue
+
+    print("done. Parsing...")
+    soup = BeautifulSoup(s, 'html.parser')
+
+    publication_section = soup.find('div', {'class': 'container-fluid'})
+    if not publication_section:
+        warnings.append("no publication section found for year %d" % (year,))
+        continue
+
+    venue = 'NeurIPS %d' % (year,)
     old_count = len(pubs)
-    for item in soup.contents:
-    
-        if isinstance(item, Tag):
-            if item.name == 'b':
-                
-                # we stumbled by a new publication entry. If we were processing
-                # one before this, then commit that one first then continue
-                if new_pub:
-                    if not new_pub.has_key('authors'):
-                        warnings.append("oh oh no authors for publication... ")
-                    
-                    if not new_pub.has_key('title'):
-                        warnings.append("oh oh no title for publication... ")
-                    
-                    new_pub['venue'] = venue
-                    new_pub['year']= year
-                    pubs.append(new_pub)
-                
-                # start new publication dictionary
-                new_pub = {}
-                new_title = str(item.contents[0]) # descend down a <b> tag
-                new_title = new_title.replace('\n', '')
-                new_pub['title'] = new_title
-                
-            if item.name == 'a':
-                modifier = str(item.contents[0]).strip()
-                if modifier == '[pdf]':
-                    new_pub['pdf'] = str(item.attrs[0][1])
-                elif modifier == '[bibtex]':
-                    new_pub['bibtex'] = str(item.attrs[0][1])
-                elif modifier == '[correction]':
-                    new_pub['correction'] = str(item.attrs[0][1])
-                elif modifier == '[supplemental]':
-                    new_pub['supplemental'] = str(item.attrs[0][1])
-                elif modifier == '[slide]':
-                    new_pub['slide'] = str(item.attrs[0][1])
-                elif modifier == '[audio]':
-                    new_pub['audio'] = str(item.attrs[0][1])
-                elif modifier == '[ps.gz]':
-                    pass # ignore
-                elif modifier == '[djvu]':
-                    pass # ignore
-                else:
-                    warnings.append("warning: modifier %s skipped" %(modifier,))
-                
-        if isinstance(item, NavigableString):
-            if len(str(item))>3:
-                
-                # this is probably the line describing authors
-                author_str = str(item)
-                author_str = author_str.replace('\n', '') # remove newlines
-                author_list = author_str.split(',')
-                if new_pub.has_key('authors'):
-                    warnings.append("we're in trouble... %s, but already have "\
-                                    "%s" % (str(item), new_pub['authors']))
-                    
-                new_pub['authors'] = [x.strip() for x in author_list]
-        
-    # I hate myself a little for this
-    # TODO LATER_MAYBE: CODE CHUNK DUPLICATION
-    if not new_pub.has_key('authors'):
-        warnings.append("oh oh no authors for publication... ")
-    if not new_pub.has_key('title'):
-        warnings.append("oh oh no title for publication... ")
-    new_pub['venue'] = venue
-    new_pub['year']= year
-    pubs.append(new_pub)
-    
-    print "read in %d publications for year %d." % (len(pubs) - old_count, year)
-    
+
+    for entry in publication_section.find_all('li', {'class': 'none'}):
+        new_pub = {}
+
+        title_tag = entry.find('a', {'title': 'paper title'})
+        if title_tag:
+            new_pub['title'] = title_tag.text.strip()
+
+        authors_tag = entry.find('i')
+        if authors_tag:
+            authors = authors_tag.text.strip().split(',')
+            new_pub['authors'] = [author.strip() for author in authors]
+
+        if new_pub:
+            new_pub['venue'] = venue
+            new_pub['year'] = year
+            pubs.append(new_pub)
+
+    print("read in %d publications for year %d." % (len(pubs) - old_count, year))
 
 # show warnings, if any were generated
-if len(warnings)>0:
-    print "%d warnings:" % (len(warnings),)
+if len(warnings) > 0:
+    print("%d warnings:" % (len(warnings),))
     for x in warnings:
-        print x
+        print(x)
 else:
-    print "No warnings generated."
+    print("No warnings generated.")
 
 # finally, save pickle as output
-print "read in a total of %d publications." % (len(pubs),)
+print("read in a total of %d publications." % (len(pubs),))
 fname = "pubs_nips"
-print "saving pickle in %s" % (fname,)
+print("saving pickle in %s" % (fname,))
 savePubs(fname, pubs)
-print "all done."
+print("all done.")

@@ -2,31 +2,39 @@
 Functions for searching Google and retrieving urls to PDFs
 """
 
-import urllib
-import simplejson
+import urllib.request
+import urllib.parse
+import json
 
 def getPDFURL(pdf_title):
     """
-    Search google for exact match of the title of this paper 
-    and return the url to the pdf file, or 'notfound' if no exact match was 
+    Search google for exact match of the title of this paper
+    and return the url to the pdf file, or 'notfound' if no exact match was
     found.
-    
+
     pdf_title: string, name of the paper.
     Returns url to the PDF, or 'notfound' if unsuccessful
+
+    Note: The original Google AJAX Search API has been retired.
+    This version uses a simple scraping approach which may be fragile.
+    For production use, consider using the Google Custom Search JSON API.
     """
-    
-    # get results in JSON
-    query = urllib.urlencode({'q' : pdf_title + ' filetype:pdf'})
-    url = 'http://ajax.googleapis.com/ajax/services/search/web?v=1.0&%s' \
-          % (query)
-    search_results = urllib.urlopen(url)
-    json = simplejson.loads(search_results.read())
-    results = json['responseData']['results']
-    
-    # sift through them in search of an exact match
-    for r in results:
-        if r['title'] == '<b>' + pdf_title + '</b>':
-            return r['url']
-    
+
+    query = urllib.parse.urlencode({'q': pdf_title + ' filetype:pdf'})
+    url = 'https://www.google.com/search?%s' % (query,)
+
+    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+    try:
+        with urllib.request.urlopen(req) as response:
+            html = response.read().decode('utf-8')
+    except Exception as e:
+        print('Error searching Google: %s' % (e,))
+        return 'notfound'
+
+    # Try to extract first PDF link from results
+    import re
+    pdf_links = re.findall(r'(https?://[^\s"&]+\.pdf)', html)
+    if pdf_links:
+        return pdf_links[0]
+
     return 'notfound'
-      
