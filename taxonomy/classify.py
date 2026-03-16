@@ -93,7 +93,7 @@ def classify_batch(papers_data, allowed_topics=None):
         topics_list = "\n".join("- %s" % t for t in allowed_topics)
         prompt = """Respond with ONLY valid JSON, no other text or markdown.
 Classify these paper titles. For each paper:
-- topics: pick 1-3 topic paths from the ALLOWED LIST below. Use the EXACT path strings. Only if nothing fits at all, use "Other".
+- topics: pick 1-3 topic paths from the ALLOWED LIST below. Use the EXACT path strings. If no topic fits well, use "Other: Domain > Area > Suggested Topic" (propose a new path in the same 3-level style).
 - keywords: list of 3-6 specific keywords following the rules below.
 
 %s
