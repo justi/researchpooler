@@ -47,7 +47,17 @@ for year in range(2006, datetime.now().year + 1):
         new_pub['title'] = title_tag.text.strip()
         page_url = 'https://proceedings.neurips.cc' + title_tag['href']
         new_pub['url'] = page_url
-        new_pub['pdf'] = page_url.replace('-Abstract-Conference.html', '-Paper-Conference.pdf').replace('/hash/', '/file/')
+        # Convert abstract page URL to direct PDF URL (handles multiple formats)
+        pdf_url = page_url
+        for abstract_suffix, paper_suffix in [
+            ('-Abstract-Conference.html', '-Paper-Conference.pdf'),
+            ('-Abstract-Datasets_and_Benchmarks.html', '-Paper-Datasets_and_Benchmarks.pdf'),
+            ('-Abstract.html', '-Paper.pdf'),
+        ]:
+            if abstract_suffix in pdf_url:
+                pdf_url = pdf_url.replace(abstract_suffix, paper_suffix).replace('/hash/', '/file/')
+                break
+        new_pub['pdf'] = pdf_url
 
         authors_tag = entry.find('span', {'class': 'paper-authors'})
         if authors_tag:
