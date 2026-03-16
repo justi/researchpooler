@@ -118,6 +118,12 @@ Return format: {"papers": [{"idx": 1, "topics": ["..."], "keywords": ["..."]}]}"
             cwd=PROJECT_DIR
         )
 
+        if result.returncode != 0:
+            print("  opencode exited with code %d" % result.returncode)
+            if result.stderr:
+                print("  stderr: %s" % result.stderr.strip())
+            return None
+
         # Parse JSONL output, find text event
         for line in result.stdout.strip().split('\n'):
             if not line.strip():
@@ -229,7 +235,8 @@ def classify_conference(conf_name, limit=None, resume=False):
     classified = checkpoint["classified"]
     start_idx = checkpoint["last_index"] if resume else 0
 
-    remaining = [(i, p) for i, p in enumerate(pubs) if p['title'] not in classified]
+    remaining = [(i, p) for i, p in enumerate(pubs)
+                 if "%s|||%s" % (p['title'], p.get('venue', '')) not in classified]
     if start_idx > 0:
         remaining = [(i, p) for i, p in remaining if i >= start_idx]
 
@@ -258,12 +265,14 @@ def classify_conference(conf_name, limit=None, resume=False):
                 idx = item.get('idx', 0) - 1
                 if 0 <= idx < len(batch):
                     orig_idx, pub = batch[idx]
-                    classified[pub['title']] = {
+                    key = "%s|||%s" % (pub['title'], pub.get('venue', ''))
+                    classified[key] = {
                         'topics': item.get('topics', []),
                         'keywords': item.get('keywords', []),
                         'year': pub.get('year', 0),
                         'venue': pub.get('venue', ''),
-                        'authors': pub.get('authors', [])
+                        'authors': pub.get('authors', []),
+                        'title': pub['title']
                     }
 
             checkpoint["last_index"] = batch[-1][0] + 1

@@ -14,7 +14,6 @@ Usage:
 import os
 import sys
 import pickle
-import json
 import argparse
 from collections import defaultdict
 
@@ -43,13 +42,15 @@ def build_tree(all_data):
                 node = tree
                 for part in parts:
                     if part not in node:
-                        node[part] = {'_papers': [], '_children': {}}
-                    node[part]['_papers'].append({
-                        'title': title,
-                        'conf': conf,
-                        'year': data.get('year', 0),
-                        'keywords': data.get('keywords', [])
-                    })
+                        node[part] = {'_papers': [], '_children': {}, '_seen': set()}
+                    if title not in node[part]['_seen']:
+                        node[part]['_seen'].add(title)
+                        node[part]['_papers'].append({
+                            'title': title,
+                            'conf': conf,
+                            'year': data.get('year', 0),
+                            'keywords': data.get('keywords', [])
+                        })
                     node = node[part]['_children']
     return tree
 

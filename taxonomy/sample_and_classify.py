@@ -7,8 +7,6 @@ import os
 import sys
 import random
 import pickle
-import json
-import subprocess
 import time
 from collections import defaultdict
 
@@ -43,6 +41,10 @@ def build_sample():
         total += len(pubs)
 
     print("Total papers: %d across %d conferences" % (total, len(all_papers)))
+
+    if total == 0:
+        print("No pubs files found. Nothing to sample.")
+        return []
 
     # Calculate proportional allocation per conference
     allocation = {}
@@ -156,12 +158,14 @@ def classify_sample(sample):
                     conf = pub['_conf']
                     if conf not in results:
                         results[conf] = {}
-                    results[conf][pub['title']] = {
+                    key = "%s|||%s" % (pub['title'], pub.get('venue', ''))
+                    results[conf][key] = {
                         'topics': item.get('topics', []),
                         'keywords': item.get('keywords', []),
                         'year': pub.get('year', 0),
                         'venue': pub.get('venue', ''),
-                        'authors': pub.get('authors', [])
+                        'authors': pub.get('authors', []),
+                        'title': pub['title']
                     }
                     total_done += 1
                     batch_ok += 1

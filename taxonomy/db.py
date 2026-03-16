@@ -19,7 +19,6 @@ import os
 import sys
 import sqlite3
 import pickle
-import json
 import argparse
 from collections import defaultdict
 
@@ -114,20 +113,17 @@ def import_papers():
         with open(pubs_path, 'rb') as f:
             pubs = pickle.load(f)
 
-        count = 0
-        for p in pubs:
-            authors_str = ', '.join(p.get('authors', []))
-            try:
-                conn.execute(
-                    "INSERT OR IGNORE INTO papers (title, year, venue, conf, pdf, authors) VALUES (?, ?, ?, ?, ?, ?)",
-                    (p.get('title', ''), p.get('year'), p.get('venue', ''),
-                     conf, p.get('pdf', ''), authors_str)
-                )
-                count += 1
-            except sqlite3.Error:
-                pass
-
+        rows = [
+            (p.get('title', ''), p.get('year'), p.get('venue', ''),
+             conf, p.get('pdf', ''), ', '.join(p.get('authors', [])))
+            for p in pubs
+        ]
+        conn.executemany(
+            "INSERT OR IGNORE INTO papers (title, year, venue, conf, pdf, authors) VALUES (?, ?, ?, ?, ?, ?)",
+            rows
+        )
         conn.commit()
+        count = len(rows)
         total += count
         print("  %-12s %6d papers" % (conf, count))
 
@@ -186,16 +182,12 @@ def import_taxonomy():
 
         count = 0
         for title, data in classified.items():
-            # find paper in DB
+            # find paper in DB by (title, venue) to match UNIQUE constraint
+            venue = data.get('venue', '')
             row = conn.execute(
-                "SELECT id FROM papers WHERE title = ? AND conf = ?",
-                (title, conf)
+                "SELECT id FROM papers WHERE title = ? AND venue = ?",
+                (title, venue)
             ).fetchone()
-            if not row:
-                # try without conf
-                row = conn.execute(
-                    "SELECT id FROM papers WHERE title = ?", (title,)
-                ).fetchone()
             if not row:
                 continue
 
