@@ -45,7 +45,9 @@ for year in range(2006, datetime.now().year + 1):
             continue
 
         new_pub['title'] = title_tag.text.strip()
-        new_pub['pdf'] = 'https://proceedings.neurips.cc' + title_tag['href']
+        page_url = 'https://proceedings.neurips.cc' + title_tag['href']
+        new_pub['url'] = page_url
+        new_pub['pdf'] = page_url.replace('-Abstract-Conference.html', '-Paper-Conference.pdf').replace('/hash/', '/file/')
 
         authors_tag = entry.find('span', {'class': 'paper-authors'})
         if authors_tag:
