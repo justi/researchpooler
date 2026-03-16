@@ -31,7 +31,7 @@ def publicationSimilarityNaive(train_pubs, test_pub):
         # find score of the match
         wnum_train = len(p['pdf_text'])
 
-        overlap = len(words & set(p['pdf_text'].keys()))
+        overlap = sum(1 for w in words if w in p['pdf_text'])
         scores[i] = 2.0 * overlap / (wnum_train + wnum_test)
 
     return scores

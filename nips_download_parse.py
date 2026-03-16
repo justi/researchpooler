@@ -20,7 +20,7 @@ for year in range(2006, datetime.now().year + 1):
 
     req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
     try:
-        with urllib.request.urlopen(req) as f:
+        with urllib.request.urlopen(req, timeout=30) as f:
             s = f.read()
     except Exception as e:
         print("error fetching year %d: %s, skipping..." % (year, e))

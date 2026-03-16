@@ -30,7 +30,7 @@ PAGE_SIZE = 1000
 def fetch_json(url):
     """Fetch a URL and return parsed JSON."""
     req = urllib.request.Request(url, headers=HEADERS)
-    with urllib.request.urlopen(req) as f:
+    with urllib.request.urlopen(req, timeout=30) as f:
         return json.loads(f.read())
 
 

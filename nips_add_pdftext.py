@@ -37,16 +37,16 @@ for i, p in enumerate(pubs):
             txt = convertPDF(pdf_url)
             processed = True
             print('processed!')
-        except:
-            print('error: unable to download the pdf from %s' % (pdf_url,))
+        except Exception as e:
+            print('error: unable to download the pdf from %s: %s' % (pdf_url, e))
             print('skipping...')
 
         if processed:
             # convert to bag of words and store
             try:
                 p['pdf_text'] = stringToWordDictionary(txt)
-            except:
-                print('was unable to convert text to bag of words. Skipped.')
+            except Exception as e:
+                print('was unable to convert text to bag of words: %s. Skipped.' % (e,))
 
     print('%d/%d = %.2f%% done.' % (i+1, len(pubs), 100*(i+1.0)/len(pubs)))
 

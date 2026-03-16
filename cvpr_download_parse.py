@@ -14,7 +14,11 @@ BASE_URL = "https://openaccess.thecvf.com"
 
 
 def fetch(url):
-    """Fetch a URL and return the HTML as string, or None on error."""
+    """Fetch a URL and return the response body as bytes, or None on error.
+
+    Note: returns bytes (not str). BeautifulSoup handles both bytes and str,
+    so callers can pass the result directly to BeautifulSoup.
+    """
     req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
     with urllib.request.urlopen(req, timeout=30) as f:
         return f.read()

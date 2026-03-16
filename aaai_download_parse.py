@@ -16,7 +16,7 @@ BASE_URL = "https://ojs.aaai.org/index.php/AAAI"
 
 def fetch(url):
     req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-    with urllib.request.urlopen(req) as f:
+    with urllib.request.urlopen(req, timeout=30) as f:
         return f.read().decode('utf-8')
 
 
@@ -28,7 +28,7 @@ for page in range(1, 15):
     url = "%s/issue/archive/%d" % (BASE_URL, page)
     try:
         html = fetch(url)
-    except:
+    except Exception:
         break
 
     soup = BeautifulSoup(html, 'html.parser')
