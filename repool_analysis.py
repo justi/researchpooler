@@ -21,7 +21,7 @@ def publicationSimilarityNaive(train_pubs, test_pub):
 
     scores = [-1 for i in range(len(train_pubs))]
     wnum_test = len(test_pub['pdf_text'])
-    words = test_pub['pdf_text'].keys()
+    words = set(test_pub['pdf_text'].keys())
 
     for i, p in enumerate(train_pubs):
         if(i % 100 == 0): print("%d/%d..." % (i, len(train_pubs)))
@@ -31,8 +31,7 @@ def publicationSimilarityNaive(train_pubs, test_pub):
         # find score of the match
         wnum_train = len(p['pdf_text'])
 
-        # a random thing I just thought of 5 seconds ago
-        overlap = sum([1 for x in words if x in p['pdf_text'].keys()])
+        overlap = len(words & set(p['pdf_text'].keys()))
         scores[i] = 2.0 * overlap / (wnum_train + wnum_test)
 
     return scores

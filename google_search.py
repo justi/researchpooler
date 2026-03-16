@@ -4,7 +4,6 @@ Functions for searching Google and retrieving urls to PDFs
 
 import urllib.request
 import urllib.parse
-import json
 
 def getPDFURL(pdf_title):
     """
