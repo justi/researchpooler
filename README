@@ -90,11 +90,48 @@ USAGE
    See demo3.py for an example using bag-of-words similarity.
 
 -------------------------------------------------------------------------------
+TAXONOMY SYSTEM
+-------------------------------------------------------------------------------
+LLM-powered topic classification. Papers are tagged with topics from a
+controlled 3-level hierarchy (209 categories in taxonomy/config.yaml)
+and normalized keywords.
+
+Setup:
+   python taxonomy/db.py --init              # create SQLite DB with all papers
+   python taxonomy/classify.py --conf nips   # classify papers (uses OpenCode CLI)
+   python taxonomy/db.py --import-taxonomy   # import classifications into DB
+
+Browse:
+   python taxonomy/db.py --stats             # show statistics
+   python taxonomy/db.py --tree --depth 2    # topic hierarchy tree
+   python taxonomy/db.py --topic "Deep Learning"    # papers by topic
+   python taxonomy/db.py --keyword "attention"      # papers by keyword
+   python taxonomy/db.py --related "transformers"   # co-occurring keywords
+   python taxonomy/db.py --query "transformer"      # search by title
+
+Classify representative sample (1000 papers, proportional across all
+conferences and years):
+   python taxonomy/sample_and_classify.py
+
+Topic taxonomy (taxonomy/config.yaml) has 15 top-level domains:
+   Artificial Intelligence, Machine Learning, Deep Learning,
+   Computer Vision, Natural Language Processing, Reinforcement Learning,
+   Knowledge & Reasoning, Robotics, Speech & Audio,
+   Healthcare & Medicine, Data Science & Analytics,
+   Mathematics & Optimization, Computer Science,
+   Security & Privacy, Interdisciplinary
+
+Classify modes:
+   - With config.yaml: LLM picks from 209 allowed topics (constrained)
+   - Without config.yaml: LLM generates topics freely (unconstrained)
+
+-------------------------------------------------------------------------------
 PIPELINE
 -------------------------------------------------------------------------------
 STAGE 1: Scrapers (*_download_parse.py) fetch proceedings and save as pickles.
 STAGE 2: nips_add_pdftext.py downloads PDFs and extracts bag-of-words text.
 STAGE 3: repool_analysis.py provides similarity search across publications.
+STAGE 4: taxonomy/ classifies papers into hierarchical topics + keywords.
 
 -------------------------------------------------------------------------------
 DATA FORMAT
@@ -109,8 +146,12 @@ Each scraper outputs a pickled list of dictionaries. Each dict has:
 
 Optionally after stage 2: 'pdf_text' contains a bag-of-words dict.
 
+The taxonomy SQLite database (taxonomy/research.db) stores all papers with
+their classified topics and keywords, queryable via SQL.
+
 -------------------------------------------------------------------------------
 DEPENDENCIES
 -------------------------------------------------------------------------------
 beautifulsoup4    HTML parsing
 pdfminer.six      PDF text extraction (for stage 2)
+pyyaml            Taxonomy config parsing
