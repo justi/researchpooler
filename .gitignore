@@ -1,3 +1,7 @@
 __pycache__/
 pubs_*
 temp.pdf
+taxonomy/*.db
+taxonomy/taxonomy_*
+taxonomy/checkpoint_*
+taxonomy/*_index.json
