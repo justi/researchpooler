@@ -15,7 +15,7 @@ BASE_URL = "https://openaccess.thecvf.com"
 
 def fetch(url):
     req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-    with urllib.request.urlopen(req) as f:
+    with urllib.request.urlopen(req, timeout=30) as f:
         return f.read()
 
 
@@ -30,7 +30,7 @@ def get_pages_for_year(year):
         soup = BeautifulSoup(html, 'html.parser')
         if soup.find('dt', {'class': 'ptitle'}):
             return [html]
-    except:
+    except Exception:
         pass
 
     try:
@@ -43,11 +43,11 @@ def get_pages_for_year(year):
                 day_url = BASE_URL + '/' + href.lstrip('/')
                 try:
                     pages.append(fetch(day_url))
-                except:
+                except Exception:
                     pass
         if pages:
             return pages
-    except:
+    except Exception:
         pass
 
     return []

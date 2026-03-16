@@ -21,7 +21,10 @@ for i, p in enumerate(pubs):
     if 'pdf' in p and 'pdf_text' not in p:
 
         # convert abstract page URL to direct PDF URL
-        pdf_url = p['pdf'].replace('-Abstract-Conference.html', '-Paper-Conference.pdf').replace('/hash/', '/file/')
+        if '-Abstract-Conference.html' in p['pdf']:
+            pdf_url = p['pdf'].replace('-Abstract-Conference.html', '-Paper-Conference.pdf').replace('/hash/', '/file/')
+        else:
+            pdf_url = p['pdf']
 
         processed = False
         try:
