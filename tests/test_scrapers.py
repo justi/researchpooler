@@ -38,34 +38,54 @@ class TestScraperFetchTimeout:
         self._check_fetch_in_file('wacv_download_parse.py')
 
 
-class TestNipsAddPdftext:
-    """Test URL rewriting logic in nips_add_pdftext.py."""
+def _rewrite_neurips_url(url):
+    """Same logic as nips_download_parse.py and nips_add_pdftext.py."""
+    pdf_url = url
+    for abstract_suffix, paper_suffix in [
+        ('-Abstract-Conference.html', '-Paper-Conference.pdf'),
+        ('-Abstract-Datasets_and_Benchmarks.html', '-Paper-Datasets_and_Benchmarks.pdf'),
+        ('-Abstract.html', '-Paper.pdf'),
+    ]:
+        if abstract_suffix in pdf_url:
+            pdf_url = pdf_url.replace(abstract_suffix, paper_suffix).replace('/hash/', '/file/')
+            break
+    return pdf_url
 
-    def test_abstract_url_rewrite(self):
-        """Abstract URLs should be rewritten to PDF URLs."""
-        url = 'https://proceedings.neurips.cc/paper_files/paper/2024/hash/abc123-Abstract-Conference.html'
-        if '-Abstract-Conference.html' in url:
-            pdf_url = url.replace('-Abstract-Conference.html', '-Paper-Conference.pdf').replace('/hash/', '/file/')
-        else:
-            pdf_url = url
-        assert pdf_url.endswith('-Paper-Conference.pdf')
-        assert '/file/' in pdf_url
-        assert '/hash/' not in pdf_url
 
-    def test_direct_pdf_url_unchanged(self):
-        """Direct PDF URLs should not be modified."""
+class TestNeurIPSUrlRewrite:
+    """Test URL rewriting for all NeurIPS URL formats (3 patterns)."""
+
+    def test_new_format_conference(self):
+        """2021+ Conference track: -Abstract-Conference.html"""
+        url = 'https://proceedings.neurips.cc/paper_files/paper/2024/hash/abc-Abstract-Conference.html'
+        pdf = _rewrite_neurips_url(url)
+        assert pdf.endswith('-Paper-Conference.pdf')
+        assert '/file/' in pdf
+        assert '/hash/' not in pdf
+
+    def test_new_format_datasets(self):
+        """2021+ Datasets track: -Abstract-Datasets_and_Benchmarks.html"""
+        url = 'https://proceedings.neurips.cc/paper_files/paper/2023/hash/abc-Abstract-Datasets_and_Benchmarks.html'
+        pdf = _rewrite_neurips_url(url)
+        assert pdf.endswith('-Paper-Datasets_and_Benchmarks.pdf')
+        assert '/file/' in pdf
+
+    def test_old_format(self):
+        """2006-2020: -Abstract.html"""
+        url = 'https://proceedings.neurips.cc/paper_files/paper/2006/hash/abc-Abstract.html'
+        pdf = _rewrite_neurips_url(url)
+        assert pdf.endswith('-Paper.pdf')
+        assert '/file/' in pdf
+
+    def test_direct_pdf_unchanged(self):
         url = 'https://example.com/paper.pdf'
-        if '-Abstract-Conference.html' in url:
-            pdf_url = url.replace('-Abstract-Conference.html', '-Paper-Conference.pdf').replace('/hash/', '/file/')
-        else:
-            pdf_url = url
-        assert pdf_url == 'https://example.com/paper.pdf'
+        assert _rewrite_neurips_url(url) == url
 
-    def test_other_conference_url_unchanged(self):
-        """URLs from other conferences should not be modified."""
+    def test_other_conference_unchanged(self):
         url = 'https://proceedings.mlr.press/v235/paper.pdf'
-        if '-Abstract-Conference.html' in url:
-            pdf_url = url.replace('-Abstract-Conference.html', '-Paper-Conference.pdf').replace('/hash/', '/file/')
-        else:
-            pdf_url = url
-        assert pdf_url == url
+        assert _rewrite_neurips_url(url) == url
+
+    def test_no_double_rewrite(self):
+        """Already-rewritten URL should not be modified."""
+        url = 'https://proceedings.neurips.cc/paper_files/paper/2024/file/abc-Paper-Conference.pdf'
+        assert _rewrite_neurips_url(url) == url
