@@ -19,6 +19,7 @@ import pickle
 import subprocess
 import argparse
 import time
+import yaml
 
 # Add parent dir to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -26,8 +27,35 @@ from repool_util import loadPubs
 
 TAXONOMY_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR = os.path.dirname(TAXONOMY_DIR)
+CONFIG_PATH = os.path.join(TAXONOMY_DIR, "config.yaml")
 BATCH_SIZE = 20  # papers per API call
 CHECKPOINT_EVERY = 5  # save after every N batches
+
+
+def load_taxonomy_config():
+    """Load taxonomy config.yaml and flatten to list of allowed topic paths."""
+    if not os.path.exists(CONFIG_PATH):
+        return None
+
+    with open(CONFIG_PATH) as f:
+        config = yaml.safe_load(f)
+
+    paths = []
+
+    def walk(node, prefix=""):
+        if isinstance(node, list):
+            for item in node:
+                paths.append((prefix + " > " + item).strip(" > "))
+        elif isinstance(node, dict):
+            for key, val in node.items():
+                new_prefix = (prefix + " > " + key).strip(" > ")
+                if val is None:
+                    paths.append(new_prefix)
+                else:
+                    walk(val, new_prefix)
+
+    walk(config)
+    return paths
 
 ALL_CONFS = [
     'nips', 'acl', 'emnlp', 'cvpr', 'aaai', 'icml', 'iclr', 'ijcai', 'iccv',
@@ -38,11 +66,26 @@ ALL_CONFS = [
 ]
 
 
-def classify_batch(titles):
+def classify_batch(titles, allowed_topics=None):
     """Send a batch of titles to OpenCode for classification."""
     titles_text = "\n".join("%d. \"%s\"" % (i+1, t) for i, t in enumerate(titles))
 
-    prompt = """Respond with ONLY valid JSON, no other text or markdown.
+    if allowed_topics:
+        topics_list = "\n".join("- %s" % t for t in allowed_topics)
+        prompt = """Respond with ONLY valid JSON, no other text or markdown.
+Classify these paper titles. For each paper:
+- topics: pick 1-3 topic paths from the ALLOWED LIST below. Use the EXACT path strings. Only if nothing fits at all, use "Other".
+- keywords: list of 3-6 specific keywords
+
+ALLOWED TOPICS:
+%s
+
+Titles:
+%s
+
+Return format: {"papers": [{"idx": 1, "topics": ["..."], "keywords": ["..."]}]}""" % (topics_list, titles_text)
+    else:
+        prompt = """Respond with ONLY valid JSON, no other text or markdown.
 Classify these paper titles into a topic hierarchy. For each paper give:
 - topics: list of topic paths using ">" separator (max 3 levels, e.g. "Machine Learning > Deep Learning > Transformers")
 - keywords: list of 3-6 specific keywords
@@ -162,6 +205,13 @@ def classify_conference(conf_name, limit=None, resume=False):
     if limit:
         pubs = pubs[:limit]
 
+    # Load taxonomy config if available
+    allowed_topics = load_taxonomy_config()
+    if allowed_topics:
+        print("Using config.yaml (%d allowed topics)" % len(allowed_topics))
+    else:
+        print("No config.yaml found, using free-form classification")
+
     # Load checkpoint
     checkpoint = load_checkpoint(conf_name) if resume else {"classified": {}, "last_index": 0}
     classified = checkpoint["classified"]
@@ -189,7 +239,7 @@ def classify_conference(conf_name, limit=None, resume=False):
             len(titles)
         ))
 
-        result = classify_batch(titles)
+        result = classify_batch(titles, allowed_topics)
 
         if result and 'papers' in result:
             for item in result['papers']:

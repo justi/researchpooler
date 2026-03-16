@@ -1,0 +1,278 @@
+Artificial Intelligence:
+  Core AI:
+    - Agent Systems
+    - AI Safety
+    - Autonomous Vehicles
+    - Causal Inference
+    - Foundation Models
+    - Game AI
+    - Human-AI Interaction
+    - Interpretability
+    - Memory
+    - Model Compression
+    - Multi-Agent Systems
+    - Multimodal Learning
+    - Planning
+    - Procedural Generation
+    - Responsible AI
+    - Trajectory Prediction
+  Bayesian & Probabilistic:
+    - Bayesian Learning
+    - Probabilistic Modeling
+  Learning Paradigms:
+    - Few-Shot Learning
+    - Federated Learning
+    - Transfer Learning
+    - Meta-Learning
+
+Machine Learning:
+  Core Methods:
+    - Classification
+    - Clustering
+    - Regression
+    - Representation Learning
+    - Metric Learning
+    - Embedding Learning
+  Learning Types:
+    - Active Learning
+    - Adversarial Learning
+    - Continual Learning
+    - Contrastive Learning
+    - Self-Supervised Learning
+    - Semi-Supervised Learning
+    - Unsupervised Learning
+    - Weakly Supervised Learning
+    - Zero-Shot Learning
+  Optimization & Theory:
+    - Bayesian Inference
+    - Distributed Learning
+    - Learning Theory
+    - Loss Functions
+    - Neural Network Optimization
+    - Optimization
+    - Statistical Learning
+    - Stochastic Processes
+    - Theory
+  Application Areas:
+    - Data Augmentation
+    - Domain Adaptation
+    - Domain Generalization
+    - Efficient Computing
+    - Fairness
+    - Knowledge Distillation
+    - Model Merging
+    - Privacy
+    - Risk Management
+
+Deep Learning:
+  Architectures:
+    - Autoencoders
+    - Transformers
+    - Neural Networks
+    - Graph Neural Networks
+  Models:
+    - Diffusion Models
+    - Generative Models
+    - Variational Inference
+  Techniques:
+    - Normalization
+    - Model Architecture
+    - Pretraining
+
+Computer Vision:
+  Analysis:
+    - 3D Vision
+    - Action Recognition
+    - Activity Recognition
+    - Anomaly Detection
+    - Biometrics
+    - Depth Estimation
+    - Face Recognition
+    - Gait Recognition
+    - Human Analysis
+    - Human Pose Estimation
+    - Object Detection
+    - Object Tracking
+    - Person Re-Identification
+    - Scene Understanding
+    - Semantic Segmentation
+  Generation:
+    - Generative Art
+    - Image Captioning
+    - Image Generation
+    - Image Translation
+    - Video Generation
+  Processing:
+    - Image Editing
+    - Image Restoration
+    - Image Segmentation
+    - Video Processing
+    - Video Understanding
+  Domain-Specific:
+    - Autonomous Driving
+    - Medical Imaging
+    - Remote Sensing
+    - Egocentric Vision
+
+Natural Language Processing:
+  Understanding:
+    - Coreference Resolution
+    - Named Entity Recognition
+    - Part-of-Speech Tagging
+    - Parsing
+    - Semantic Analysis
+    - Sentiment Analysis
+    - Syntax
+  Generation:
+    - Dialogue Systems
+    - Language Modeling
+    - Summarization
+    - Text Generation
+  Applications:
+    - Fact-Checking
+    - Information Extraction
+    - Information Retrieval
+    - Intent Classification
+    - Machine Reading Comprehension
+    - Machine Translation
+    - Question Answering
+    - Text Classification
+  Resources & Methods:
+    - Knowledge Editing
+    - Large Language Models
+    - Lexical Semantics
+    - Multilingual NLP
+    - Natural Language Inference
+    - Text Representation
+
+Reinforcement Learning:
+  Methods:
+    - Deep RL
+    - Offline RL
+    - Policy Learning
+    - Multi-Agent Systems
+  Applications:
+    - Game AI
+    - Robotics
+    - Value Iteration
+
+Knowledge & Reasoning:
+  Representation:
+    - Knowledge Graphs
+    - Knowledge Representation
+    - Ontology Learning
+  Reasoning:
+    - Automated Planning
+    - Automated Reasoning
+    - Causal Inference
+    - Formal Methods
+    - Graph Embeddings
+
+Robotics:
+  Systems:
+    - Control Systems
+    - Control Theory
+    - Legged Robots
+    - Medical Robotics
+    - Soft Robotics
+  Capabilities:
+    - Human-Robot Interaction
+    - Manipulation
+    - Motion Planning
+    - Perception
+    - Navigation
+
+Speech & Audio:
+  Recognition:
+    - Automatic Speech Recognition
+    - Speech Recognition
+    - Speaker Recognition
+  Synthesis:
+    - Text-to-Speech
+    - Speech Enhancement
+  Analysis:
+    - Clinical Speech Analysis
+    - Prosody Analysis
+    - Speaker Verification
+
+Healthcare & Medicine:
+  Clinical:
+    - Clinical NLP
+    - Medical Imaging
+    - Mental Health
+    - Cardiology
+    - Neurological Disorders
+  Research:
+    - Bioinformatics
+    - Biosignal Processing
+    - Medical AI
+
+Data Science & Analytics:
+  Methods:
+    - Data Mining
+    - Time Series
+    - Time Series Analysis
+  Applications:
+    - Clustering
+    - Recommender Systems
+    - Mobility Analysis
+    - Disease Surveillance
+
+Mathematics & Optimization:
+  Mathematics:
+    - Algebra
+    - Discrete Mathematics
+    - Geometry
+    - Graph Theory
+    - Information Theory
+    - Linear Algebra
+    - Numerical Analysis
+    - Probability
+    - Statistics
+  Optimization:
+    - Combinatorial Optimization
+    - Continuous Optimization
+    - Global Optimization
+    - Stochastic Methods
+    - Online Algorithms
+
+Computer Science:
+  Foundations:
+    - Algorithms
+    - Data Structures
+    - Programming Languages
+    - Formal Languages
+  Systems:
+    - Computer Graphics
+    - Databases
+    - Distributed Systems
+    - Operating Systems
+    - Computer Networks
+  Applications:
+    - Cybersecurity
+    - Software Engineering
+    - Information Retrieval
+    - Document Analysis
+
+Security & Privacy:
+  - Cybersecurity
+  - Differential Privacy
+  - Network Security
+  - Privacy
+
+Interdisciplinary:
+  Linguistics:
+    - Computational Linguistics
+    - Morphology
+    - Phonetics
+    - Semantics
+  Cognitive Science:
+    - Cognitive Modeling
+    - Perception
+  Social:
+    - Affective Computing
+    - Social Media Analysis
+    - Education
+  Science:
+    - Digital Humanities
+    - Quantum Computing
