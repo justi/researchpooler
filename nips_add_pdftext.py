@@ -20,11 +20,16 @@ for i, p in enumerate(pubs):
     # search to try to look up a link for the pdf first.
     if 'pdf' in p and 'pdf_text' not in p:
 
-        # convert abstract page URL to direct PDF URL
-        if '-Abstract-Conference.html' in p['pdf']:
-            pdf_url = p['pdf'].replace('-Abstract-Conference.html', '-Paper-Conference.pdf').replace('/hash/', '/file/')
-        else:
-            pdf_url = p['pdf']
+        # convert abstract page URL to direct PDF URL (handles multiple formats)
+        pdf_url = p['pdf']
+        for abstract_suffix, paper_suffix in [
+            ('-Abstract-Conference.html', '-Paper-Conference.pdf'),
+            ('-Abstract-Datasets_and_Benchmarks.html', '-Paper-Datasets_and_Benchmarks.pdf'),
+            ('-Abstract.html', '-Paper.pdf'),
+        ]:
+            if abstract_suffix in pdf_url:
+                pdf_url = pdf_url.replace(abstract_suffix, paper_suffix).replace('/hash/', '/file/')
+                break
 
         processed = False
         try:
