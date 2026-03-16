@@ -3,6 +3,7 @@ Functions for PDF parsing tools and utils
 """
 
 from pdfminer.high_level import extract_text
+import os
 import tempfile
 import urllib.request
 
@@ -17,9 +18,15 @@ def convertPDF(pdf_path):
 
     if pdf_path[:4] == 'http':
         print('first downloading %s ...' % (pdf_path,))
-        with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as tmp:
-            with urllib.request.urlopen(pdf_path, timeout=30) as resp:
+        req = urllib.request.Request(pdf_path, headers={'User-Agent': 'Mozilla/5.0'})
+        tmp = tempfile.NamedTemporaryFile(suffix='.pdf', delete=False)
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp:
                 tmp.write(resp.read())
-            pdf_path = tmp.name
+            tmp.close()
+            return extract_text(tmp.name)
+        finally:
+            tmp.close()
+            os.unlink(tmp.name)
 
     return extract_text(pdf_path)

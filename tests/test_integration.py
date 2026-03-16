@@ -14,6 +14,11 @@ from bs4 import BeautifulSoup
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+pytestmark = pytest.mark.skipif(
+    os.environ.get('RUN_INTEGRATION_TESTS') != '1',
+    reason='Set RUN_INTEGRATION_TESTS=1 to run'
+)
+
 HEADERS = {'User-Agent': 'Mozilla/5.0'}
 
 
