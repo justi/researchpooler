@@ -92,19 +92,28 @@ def classify_batch(papers_data, allowed_topics=None):
     if allowed_topics:
         topics_list = "\n".join("- %s" % t for t in allowed_topics)
         prompt = """Respond with ONLY valid JSON, no other text or markdown.
-Classify these paper titles. For each paper:
-- topics: pick 1-3 topic paths from the ALLOWED LIST below. Use the EXACT path strings. If no topic fits well, use "Other: Domain > Area > Suggested Topic" (propose a new path in the same 3-level style).
-- keywords: list of 3-6 specific keywords following the rules below.
+
+For each paper below, follow these steps:
+1. IDENTIFY the primary methodology (e.g., deep learning, optimization, Bayesian, game theory)
+2. IDENTIFY the application domain (e.g., vision, language, robotics, healthcare)
+3. SELECT 1-3 topic paths from the ALLOWED LIST that best match
+4. PROVIDE a brief reasoning quote from the title/abstract that justifies your choice
+5. EXTRACT 3-6 specific keywords
+
+TOPIC RULES:
+- Use EXACT path strings from the ALLOWED LIST
+- If no topic fits well, use "Other: Domain > Area > Suggested Topic" (propose a new path)
+- The "reasoning" field must cite specific words from the title or abstract that led to your choice
 
 %s
 
 ALLOWED TOPICS:
 %s
 
-Titles:
+PAPERS:
 %s
 
-Return format: {"papers": [{"idx": 1, "topics": ["..."], "keywords": ["..."]}]}""" % (keyword_rules, topics_list, titles_text)
+Return format: {"papers": [{"idx": 1, "topics": ["..."], "keywords": ["..."], "reasoning": "Selected because: ..."}]}""" % (keyword_rules, topics_list, titles_text)
     else:
         prompt = """Respond with ONLY valid JSON, no other text or markdown.
 Classify these paper titles into a topic hierarchy. For each paper give:
@@ -282,6 +291,7 @@ def classify_conference(conf_name, limit=None, resume=False):
                     classified[key] = {
                         'topics': item.get('topics', []),
                         'keywords': item.get('keywords', []),
+                        'reasoning': item.get('reasoning', ''),
                         'year': pub.get('year', 0),
                         'venue': pub.get('venue', ''),
                         'authors': pub.get('authors', []),
