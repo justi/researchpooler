@@ -116,49 +116,23 @@ def build_sample():
     return sample
 
 
-def classify_batch(titles):
-    """Send a batch of titles to OpenCode for classification."""
-    titles_text = "\n".join("%d. \"%s\"" % (i+1, t) for i, t in enumerate(titles))
-
-    prompt = """Respond with ONLY valid JSON, no other text or markdown.
-Classify these paper titles into a topic hierarchy. For each paper give:
-- topics: list of topic paths using ">" separator (max 3 levels, e.g. "Machine Learning > Deep Learning > Transformers")
-- keywords: list of 3-6 specific keywords
-
-Titles:
-%s
-
-Return format: {"papers": [{"idx": 1, "topics": ["..."], "keywords": ["..."]}]}""" % titles_text
-
-    cmd = ["opencode", "run", "--format", "json", prompt]
-
-    try:
-        result = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=120, cwd=PROJECT_DIR
-        )
-        for line in result.stdout.strip().split('\n'):
-            if not line.strip():
-                continue
-            try:
-                event = json.loads(line)
-                if event.get('type') == 'text':
-                    text = event['part']['text'].strip()
-                    if text.startswith('```'):
-                        text = text.split('\n', 1)[1] if '\n' in text else text
-                        text = text.rsplit('```', 1)[0] if '```' in text else text
-                        text = text.strip()
-                    return json.loads(text)
-            except (json.JSONDecodeError, KeyError):
-                continue
-    except subprocess.TimeoutExpired:
-        print("  timeout, skipping batch...")
-    except Exception as e:
-        print("  error: %s" % e)
-    return None
+def classify_batch(titles, allowed_topics=None):
+    """Send a batch of titles to OpenCode for classification.
+    Uses classify.py's classify_batch to avoid duplication."""
+    # Import from classify.py to use the same logic (config + keyword rules)
+    from classify import classify_batch as _classify
+    return _classify(titles, allowed_topics)
 
 
 def classify_sample(sample):
     """Classify all papers in the sample, saving progress after every batch."""
+    from classify import load_taxonomy_config
+    allowed_topics = load_taxonomy_config()
+    if allowed_topics:
+        print("Using config.yaml (%d allowed topics)" % len(allowed_topics))
+    else:
+        print("No config.yaml, using free-form classification")
+
     results = {}  # conf -> {title: {topics, keywords, year, venue, authors}}
     total_done = 0
     total_batches = (len(sample) + BATCH_SIZE - 1) // BATCH_SIZE
@@ -171,7 +145,7 @@ def classify_sample(sample):
         sys.stdout.write("  batch %d/%d (%d done)..." % (batch_num, total_batches, total_done))
         sys.stdout.flush()
 
-        result = classify_batch(titles)
+        result = classify_batch(titles, allowed_topics)
 
         batch_ok = 0
         if result and 'papers' in result:
