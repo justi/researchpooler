@@ -66,9 +66,20 @@ ALL_CONFS = [
 ]
 
 
-def classify_batch(titles, allowed_topics=None):
-    """Send a batch of titles to OpenCode for classification."""
-    titles_text = "\n".join("%d. \"%s\"" % (i+1, t) for i, t in enumerate(titles))
+def classify_batch(papers_data, allowed_topics=None):
+    """Send a batch of papers (title + optional abstract) to OpenCode for classification.
+
+    papers_data: list of dicts with 'title' and optionally 'abstract'
+    """
+    parts = []
+    for i, pd in enumerate(papers_data):
+        title = pd['title']
+        abstract = pd.get('abstract', '')
+        if abstract:
+            parts.append('%d. Title: "%s"\n   Abstract: %s' % (i+1, title, abstract[:300]))
+        else:
+            parts.append('%d. "%s"' % (i+1, title))
+    titles_text = "\n".join(parts)
 
     keyword_rules = """KEYWORD RULES (strict):
 - Each keyword must be at least 2 space-separated words (e.g. "image restoration" not "regularization", "bioinformatics", or "super-resolution")
@@ -250,15 +261,17 @@ def classify_conference(conf_name, limit=None, resume=False):
     batches_since_save = 0
     for batch_start in range(0, len(remaining), BATCH_SIZE):
         batch = remaining[batch_start:batch_start + BATCH_SIZE]
-        titles = [p['title'] for _, p in batch]
+        papers_data = [{'title': p['title'], 'abstract': p.get('abstract', '')} for _, p in batch]
+        has_abstracts = sum(1 for pd in papers_data if pd['abstract'])
 
-        print("  batch %d/%d (%d papers)..." % (
+        print("  batch %d/%d (%d papers, %d with abstracts)..." % (
             batch_start // BATCH_SIZE + 1,
             (len(remaining) + BATCH_SIZE - 1) // BATCH_SIZE,
-            len(titles)
+            len(papers_data),
+            has_abstracts
         ))
 
-        result = classify_batch(titles, allowed_topics)
+        result = classify_batch(papers_data, allowed_topics)
 
         if result and 'papers' in result:
             for item in result['papers']:
