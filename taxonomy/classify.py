@@ -70,12 +70,22 @@ def classify_batch(titles, allowed_topics=None):
     """Send a batch of titles to OpenCode for classification."""
     titles_text = "\n".join("%d. \"%s\"" % (i+1, t) for i, t in enumerate(titles))
 
+    keyword_rules = """KEYWORD RULES (strict):
+- Each keyword must be at least 2 space-separated words (e.g. "image restoration" not "regularization", "bioinformatics", or "super-resolution")
+- Use full forms, never abbreviations (e.g. "reinforcement learning" not "RL", "graph neural networks" not "GNN")
+- Use lowercase
+- Be specific: "variational inference" not "bayesian", "object detection" not "detection"
+- No keyword should be a substring of another keyword for the same paper (e.g. don't output both "feature learning" and "multi-task feature learning" — keep only the more specific one)
+- Prefer established terms (e.g. "domain adaptation" not "domain shifting")"""
+
     if allowed_topics:
         topics_list = "\n".join("- %s" % t for t in allowed_topics)
         prompt = """Respond with ONLY valid JSON, no other text or markdown.
 Classify these paper titles. For each paper:
 - topics: pick 1-3 topic paths from the ALLOWED LIST below. Use the EXACT path strings. Only if nothing fits at all, use "Other".
-- keywords: list of 3-6 specific keywords
+- keywords: list of 3-6 specific keywords following the rules below.
+
+%s
 
 ALLOWED TOPICS:
 %s
@@ -83,17 +93,19 @@ ALLOWED TOPICS:
 Titles:
 %s
 
-Return format: {"papers": [{"idx": 1, "topics": ["..."], "keywords": ["..."]}]}""" % (topics_list, titles_text)
+Return format: {"papers": [{"idx": 1, "topics": ["..."], "keywords": ["..."]}]}""" % (keyword_rules, topics_list, titles_text)
     else:
         prompt = """Respond with ONLY valid JSON, no other text or markdown.
 Classify these paper titles into a topic hierarchy. For each paper give:
 - topics: list of topic paths using ">" separator (max 3 levels, e.g. "Machine Learning > Deep Learning > Transformers")
-- keywords: list of 3-6 specific keywords
+- keywords: list of 3-6 specific keywords following the rules below.
+
+%s
 
 Titles:
 %s
 
-Return format: {"papers": [{"idx": 1, "topics": ["..."], "keywords": ["..."]}]}""" % titles_text
+Return format: {"papers": [{"idx": 1, "topics": ["..."], "keywords": ["..."]}]}""" % (keyword_rules, titles_text)
 
     cmd = ["opencode", "run", "--format", "json", prompt]
 
