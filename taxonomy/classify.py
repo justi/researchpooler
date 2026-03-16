@@ -28,7 +28,7 @@ from repool_util import loadPubs
 TAXONOMY_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR = os.path.dirname(TAXONOMY_DIR)
 CONFIG_PATH = os.path.join(TAXONOMY_DIR, "config.yaml")
-BATCH_SIZE = 20  # papers per API call
+BATCH_SIZE = 5  # papers per API call (reduced for full abstracts up to 2000 chars)
 CHECKPOINT_EVERY = 5  # save after every N batches
 
 
@@ -76,7 +76,7 @@ def classify_batch(papers_data, allowed_topics=None):
         title = pd['title']
         abstract = pd.get('abstract', '')
         if abstract:
-            parts.append('%d. Title: "%s"\n   Abstract: %s' % (i+1, title, abstract[:300]))
+            parts.append('%d. Title: "%s"\n   Abstract: %s' % (i+1, title, abstract[:2000]))
         else:
             parts.append('%d. "%s"' % (i+1, title))
     titles_text = "\n".join(parts)
