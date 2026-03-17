@@ -5,11 +5,17 @@ Classifies papers from pubs_* pickle files into a hierarchical topic taxonomy.
 Uses OpenCode's default model to extract topics and keywords from paper titles.
 Processes papers in batches to be efficient with API calls.
 
+Two-stage pipeline (RE-29):
+  Stage 1: PG pre-classification assigns candidate domains (in Rails)
+  Stage 2: Pruned taxonomy tree sent to LLM with keyword post-processing
+
 Usage:
     python taxonomy/classify.py                    # classify all conferences
     python taxonomy/classify.py --conf nips        # classify one conference
     python taxonomy/classify.py --conf nips --limit 100  # first 100 papers
     python taxonomy/classify.py --resume           # resume from last checkpoint
+    python taxonomy/classify.py --pre-domains-file domains.json  # use pruned taxonomy
+    python taxonomy/classify.py --status-file statuses.json      # incremental by status
 """
 
 import os
@@ -20,15 +26,18 @@ import subprocess
 import argparse
 import time
 import yaml
+from datetime import datetime, timezone
 
 # Add parent dir to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from repool_util import loadPubs
+from taxonomy.pruned_taxonomy import build_pruned_taxonomy, load_taxonomy_config_raw
+from taxonomy.keyword_normalize import normalize_keywords
 
 TAXONOMY_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR = os.path.dirname(TAXONOMY_DIR)
 CONFIG_PATH = os.path.join(TAXONOMY_DIR, "config.yaml")
-BATCH_SIZE = 5  # papers per API call (reduced for full abstracts up to 2000 chars)
+BATCH_SIZE = 5  # papers per API call
 CHECKPOINT_EVERY = 5  # save after every N batches
 
 
@@ -82,7 +91,7 @@ def classify_batch(papers_data, allowed_topics=None):
             title = pd['title']
             abstract = pd.get('abstract', '')
         if abstract:
-            parts.append('%d. Title: "%s"\n   Abstract: %s' % (i+1, title, abstract[:2000]))
+            parts.append('%d. Title: "%s"\n   Abstract: %s' % (i+1, title, abstract))
         else:
             parts.append('%d. "%s"' % (i+1, title))
     titles_text = "\n".join(parts)
@@ -239,8 +248,15 @@ def build_keyword_index(all_classified):
     return kw_index
 
 
-def classify_conference(conf_name, limit=None, resume=False, abstract_only=False):
-    """Classify all papers from a conference."""
+def classify_conference(conf_name, limit=None, resume=False, abstract_only=False,
+                        pre_domains_map=None, status_map=None, existing_keywords=None):
+    """Classify all papers from a conference.
+
+    Args:
+        pre_domains_map: dict mapping paper title -> list of domain names (for pruned taxonomy)
+        status_map: dict mapping paper title -> classification status (for incremental processing)
+        existing_keywords: set of existing keyword names (for normalization dedup)
+    """
     pubs_path = os.path.join(PROJECT_DIR, "pubs_%s" % conf_name)
     if not os.path.exists(pubs_path):
         print("pubs_%s not found, skipping" % conf_name)
@@ -250,12 +266,18 @@ def classify_conference(conf_name, limit=None, resume=False, abstract_only=False
     if limit:
         pubs = pubs[:limit]
 
-    # Load taxonomy config if available
+    # Load taxonomy config
+    taxonomy_config = load_taxonomy_config_raw()
     allowed_topics = load_taxonomy_config()
+    use_pruned = pre_domains_map is not None and taxonomy_config is not None
+
     if allowed_topics:
         print("Using config.yaml (%d allowed topics)" % len(allowed_topics))
     else:
         print("No config.yaml found, using free-form classification")
+
+    if use_pruned:
+        print("Pruned taxonomy mode: per-paper domain filtering enabled")
 
     # Load checkpoint
     checkpoint = load_checkpoint(conf_name) if resume else {"classified": {}, "last_index": 0}
@@ -266,6 +288,13 @@ def classify_conference(conf_name, limit=None, resume=False, abstract_only=False
                  if "%s|||%s" % (p['title'], p.get('venue', '')) not in classified]
     if start_idx > 0:
         remaining = [(i, p) for i, p in remaining if i >= start_idx]
+
+    # Incremental: only process papers with status "pre_classified"
+    if status_map is not None:
+        before = len(remaining)
+        remaining = [(i, p) for i, p in remaining
+                     if status_map.get(p['title']) == 'pre_classified']
+        print("  incremental mode: %d/%d papers with pre_classified status" % (len(remaining), before))
 
     if abstract_only:
         before = len(remaining)
@@ -279,20 +308,35 @@ def classify_conference(conf_name, limit=None, resume=False, abstract_only=False
     print("%s: %d papers to classify (%d already done)" % (
         conf_name, len(remaining), len(classified)))
 
+    # Collect existing keywords for normalization dedup
+    kw_set = set(existing_keywords) if existing_keywords else set()
+
     batches_since_save = 0
-    for batch_start in range(0, len(remaining), BATCH_SIZE):
-        batch = remaining[batch_start:batch_start + BATCH_SIZE]
+    # When using pruned taxonomy, process 1 paper at a time (each gets its own prompt)
+    effective_batch_size = 1 if use_pruned else BATCH_SIZE
+
+    for batch_start in range(0, len(remaining), effective_batch_size):
+        batch = remaining[batch_start:batch_start + effective_batch_size]
         papers_data = [{'title': p['title'], 'abstract': p.get('abstract', '')} for _, p in batch]
         has_abstracts = sum(1 for pd in papers_data if pd['abstract'])
 
         print("  batch %d/%d (%d papers, %d with abstracts)..." % (
-            batch_start // BATCH_SIZE + 1,
-            (len(remaining) + BATCH_SIZE - 1) // BATCH_SIZE,
+            batch_start // effective_batch_size + 1,
+            (len(remaining) + effective_batch_size - 1) // effective_batch_size,
             len(papers_data),
             has_abstracts
         ))
 
-        result = classify_batch(papers_data, allowed_topics)
+        # Determine allowed topics for this batch
+        batch_topics = allowed_topics
+        if use_pruned and len(batch) == 1:
+            paper_title = batch[0][1]['title']
+            paper_domains = pre_domains_map.get(paper_title, [])
+            if paper_domains:
+                batch_topics = build_pruned_taxonomy(paper_domains, taxonomy_config)
+                print("    pruned to %d topics (%s)" % (len(batch_topics), ", ".join(paper_domains)))
+
+        result = classify_batch(papers_data, batch_topics)
 
         if result and 'papers' in result:
             for item in result['papers']:
@@ -300,14 +344,24 @@ def classify_conference(conf_name, limit=None, resume=False, abstract_only=False
                 if 0 <= idx < len(batch):
                     orig_idx, pub = batch[idx]
                     key = "%s|||%s" % (pub['title'], pub.get('venue', ''))
+
+                    # Post-process keywords with normalization
+                    raw_keywords = item.get('keywords', [])
+                    normalized_kw = normalize_keywords(raw_keywords, kw_set)
+                    # Add normalized keywords to the existing set for future dedup
+                    kw_set.update(normalized_kw)
+
                     classified[key] = {
                         'topics': item.get('topics', []),
-                        'keywords': item.get('keywords', []),
+                        'keywords': normalized_kw,
+                        'keywords_raw': raw_keywords,
                         'reasoning': item.get('reasoning', ''),
                         'year': pub.get('year', 0),
                         'venue': pub.get('venue', ''),
                         'authors': pub.get('authors', []),
-                        'title': pub['title']
+                        'title': pub['title'],
+                        'llm_classified_at': datetime.now(timezone.utc).isoformat(),
+                        'classification_status': 'classified'
                     }
 
             checkpoint["last_index"] = batch[-1][0] + 1
@@ -337,6 +391,10 @@ def main():
     parser.add_argument('--resume', action='store_true', help='Resume from checkpoint')
     parser.add_argument('--abstract-only', action='store_true', help='Only classify papers that have abstracts')
     parser.add_argument('--build-index', action='store_true', help='Build topic/keyword index from existing taxonomies')
+    parser.add_argument('--pre-domains-file', type=str,
+                        help='JSON file mapping paper titles to pre-domain arrays')
+    parser.add_argument('--status-file', type=str,
+                        help='JSON file mapping paper titles to classification statuses')
     args = parser.parse_args()
 
     if args.build_index:
@@ -364,10 +422,38 @@ def main():
             print("  [%4d] %s" % (len(papers), topic))
         return
 
+    # Load pre-domains file if provided
+    pre_domains_map = None
+    if args.pre_domains_file:
+        with open(args.pre_domains_file) as f:
+            pre_domains_map = json.load(f)
+        print("Loaded pre-domains for %d papers" % len(pre_domains_map))
+
+    # Load status file if provided
+    status_map = None
+    if args.status_file:
+        with open(args.status_file) as f:
+            status_map = json.load(f)
+        print("Loaded statuses for %d papers" % len(status_map))
+
+    # Load existing keywords for normalization dedup
+    existing_keywords = set()
+    kw_index_path = os.path.join(TAXONOMY_DIR, "keyword_index.json")
+    if os.path.exists(kw_index_path):
+        with open(kw_index_path) as f:
+            existing_keywords = set(json.load(f).keys())
+        print("Loaded %d existing keywords for normalization" % len(existing_keywords))
+
     confs = [args.conf] if args.conf else ALL_CONFS
 
     for conf in confs:
-        classify_conference(conf, limit=args.limit, resume=args.resume, abstract_only=args.abstract_only)
+        classify_conference(
+            conf, limit=args.limit, resume=args.resume,
+            abstract_only=args.abstract_only,
+            pre_domains_map=pre_domains_map,
+            status_map=status_map,
+            existing_keywords=existing_keywords
+        )
 
 
 if __name__ == '__main__':
