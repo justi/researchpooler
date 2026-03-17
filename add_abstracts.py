@@ -114,7 +114,6 @@ def scrape_source(source_name, limit=None, year=None):
             to_process.append(p)
 
         if limit:
-            remaining = limit - sum(1 for _ in [])  # limit is per-source, applied per-conf
             to_process = to_process[:limit]
 
         total = len(to_process)
@@ -129,7 +128,11 @@ def scrape_source(source_name, limit=None, year=None):
         failed = 0
 
         for i, p in enumerate(to_process):
-            abstract = source.fetch_and_extract(p["pdf"])
+            try:
+                abstract = source.fetch_and_extract(p["pdf"])
+            except NotImplementedError:
+                print(f"    Source '{source_name}' is a stub — not yet implemented. See the plugin file for details.")
+                return
 
             if abstract:
                 p["abstract"] = abstract

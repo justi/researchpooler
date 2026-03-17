@@ -47,7 +47,11 @@ class AbstractParser(HTMLParser):
         self.current_tag = tag
         if tag == "h2":
             self.depth = 0
-        if self.found_h2_abstract and tag in ("p", "div", "span"):
+            # Reset if we hit another h2 after already finding the abstract
+            if self.found_h2_abstract and self.abstract_parts:
+                self.in_abstract = False
+                self.found_h2_abstract = False
+        if self.found_h2_abstract and tag in ("p", "div"):
             self.in_abstract = True
             self.depth += 1
 
@@ -58,11 +62,11 @@ class AbstractParser(HTMLParser):
                 self.in_abstract = False
 
     def handle_data(self, data):
-        if self.current_tag == "h2" and "abstract" in data.lower().strip().lower():
+        if self.current_tag == "h2" and "abstract" in data.lower().strip():
             self.found_h2_abstract = True
             return
 
-        if self.in_abstract or (self.found_h2_abstract and self.current_tag == "p"):
+        if self.in_abstract:
             text = data.strip()
             if text and len(text) > 20:  # skip tiny fragments
                 self.abstract_parts.append(text)

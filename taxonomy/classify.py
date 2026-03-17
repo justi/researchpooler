@@ -69,12 +69,18 @@ ALL_CONFS = [
 def classify_batch(papers_data, allowed_topics=None):
     """Send a batch of papers (title + optional abstract) to OpenCode for classification.
 
-    papers_data: list of dicts with 'title' and optionally 'abstract'
+    papers_data: list of dicts with 'title' and optionally 'abstract',
+                 or list of title strings (backward compatible).
     """
     parts = []
     for i, pd in enumerate(papers_data):
-        title = pd['title']
-        abstract = pd.get('abstract', '')
+        # Accept both dict and plain string (backward compat)
+        if isinstance(pd, str):
+            title = pd
+            abstract = ''
+        else:
+            title = pd['title']
+            abstract = pd.get('abstract', '')
         if abstract:
             parts.append('%d. Title: "%s"\n   Abstract: %s' % (i+1, title, abstract[:2000]))
         else:
@@ -85,6 +91,7 @@ def classify_batch(papers_data, allowed_topics=None):
 - Each keyword must be at least 2 space-separated words (e.g. "image restoration" not "regularization", "bioinformatics", or "super-resolution")
 - Use full forms, never abbreviations (e.g. "reinforcement learning" not "RL", "graph neural networks" not "GNN")
 - Use lowercase
+- Use SINGULAR form by default (e.g. "generative model" not "generative models", "support vector machine" not "support vector machines", "regret bound" not "regret bounds"). Only use plural when the term is inherently plural (e.g. "neural networks", "gaussian processes", "kernel methods", "markov chain monte carlo")
 - Be specific: "variational inference" not "bayesian", "object detection" not "detection"
 - No keyword should be a substring of another keyword for the same paper (e.g. don't output both "feature learning" and "multi-task feature learning" — keep only the more specific one)
 - Prefer established terms (e.g. "domain adaptation" not "domain shifting")"""
@@ -232,7 +239,7 @@ def build_keyword_index(all_classified):
     return kw_index
 
 
-def classify_conference(conf_name, limit=None, resume=False):
+def classify_conference(conf_name, limit=None, resume=False, abstract_only=False):
     """Classify all papers from a conference."""
     pubs_path = os.path.join(PROJECT_DIR, "pubs_%s" % conf_name)
     if not os.path.exists(pubs_path):
@@ -259,6 +266,11 @@ def classify_conference(conf_name, limit=None, resume=False):
                  if "%s|||%s" % (p['title'], p.get('venue', '')) not in classified]
     if start_idx > 0:
         remaining = [(i, p) for i, p in remaining if i >= start_idx]
+
+    if abstract_only:
+        before = len(remaining)
+        remaining = [(i, p) for i, p in remaining if p.get('abstract')]
+        print("  abstract-only mode: %d/%d papers have abstracts" % (len(remaining), before))
 
     if not remaining:
         print("%s: all %d papers already classified" % (conf_name, len(classified)))
@@ -323,6 +335,7 @@ def main():
     parser.add_argument('--conf', type=str, help='Conference to classify (e.g. nips)')
     parser.add_argument('--limit', type=int, help='Max papers to classify')
     parser.add_argument('--resume', action='store_true', help='Resume from checkpoint')
+    parser.add_argument('--abstract-only', action='store_true', help='Only classify papers that have abstracts')
     parser.add_argument('--build-index', action='store_true', help='Build topic/keyword index from existing taxonomies')
     args = parser.parse_args()
 
@@ -354,7 +367,7 @@ def main():
     confs = [args.conf] if args.conf else ALL_CONFS
 
     for conf in confs:
-        classify_conference(conf, limit=args.limit, resume=args.resume)
+        classify_conference(conf, limit=args.limit, resume=args.resume, abstract_only=args.abstract_only)
 
 
 if __name__ == '__main__':
