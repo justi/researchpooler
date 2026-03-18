@@ -312,8 +312,30 @@ def classify_conference(conf_name, limit=None, resume=False, abstract_only=False
     kw_set = set(existing_keywords) if existing_keywords else set()
 
     batches_since_save = 0
-    # When using pruned taxonomy, process 1 paper at a time (each gets its own prompt)
-    effective_batch_size = 1 if use_pruned else BATCH_SIZE
+
+    if use_pruned:
+        # Group papers by their pre_domains for efficient batching
+        from collections import defaultdict
+        domain_groups = defaultdict(list)
+        no_domain = []
+        for item in remaining:
+            paper_title = item[1]['title']
+            paper_domains = pre_domains_map.get(paper_title, [])
+            key = tuple(sorted(paper_domains)) if paper_domains else None
+            if key:
+                domain_groups[key].append(item)
+            else:
+                no_domain.append(item)
+
+        # Flatten into ordered batches: same domains grouped, batch_size=BATCH_SIZE
+        ordered_remaining = []
+        for domain_key in sorted(domain_groups.keys(), key=lambda k: -len(domain_groups[k])):
+            ordered_remaining.extend(domain_groups[domain_key])
+        ordered_remaining.extend(no_domain)  # no-domain papers use full tree
+        remaining = ordered_remaining
+        print("  grouped by %d domain combos, %d without pre-domains" % (len(domain_groups), len(no_domain)))
+
+    effective_batch_size = BATCH_SIZE
 
     for batch_start in range(0, len(remaining), effective_batch_size):
         batch = remaining[batch_start:batch_start + effective_batch_size]
@@ -329,7 +351,8 @@ def classify_conference(conf_name, limit=None, resume=False, abstract_only=False
 
         # Determine allowed topics for this batch
         batch_topics = allowed_topics
-        if use_pruned and len(batch) == 1:
+        if use_pruned:
+            # Use domains from first paper in batch (they're grouped by domain)
             paper_title = batch[0][1]['title']
             paper_domains = pre_domains_map.get(paper_title, [])
             if paper_domains:
