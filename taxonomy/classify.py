@@ -115,12 +115,13 @@ def classify_batch(papers_data, allowed_topics=None):
 
     keyword_rules = """KEYWORD RULES (strict):
 - Each keyword must be at least 2 space-separated words (e.g. "image restoration" not "regularization", "bioinformatics", or "super-resolution")
-- Use full forms, never abbreviations (e.g. "reinforcement learning" not "RL", "graph neural networks" not "GNN")
+- Use FULL FORM as the keyword (e.g. "reinforcement learning" not "RL", "graph neural networks" not "GNN")
 - Use lowercase
 - Use SINGULAR form by default (e.g. "generative model" not "generative models", "support vector machine" not "support vector machines", "regret bound" not "regret bounds"). Only use plural when the term is inherently plural (e.g. "neural networks", "gaussian processes", "kernel methods", "markov chain monte carlo")
 - Be specific: "variational inference" not "bayesian", "object detection" not "detection"
 - No keyword should be a substring of another keyword for the same paper (e.g. don't output both "feature learning" and "multi-task feature learning" — keep only the more specific one)
-- Prefer established terms (e.g. "domain adaptation" not "domain shifting")"""
+- Prefer established terms (e.g. "domain adaptation" not "domain shifting")
+- For each keyword, if a common abbreviation exists in the paper text, include it as "abbr" (e.g. if paper says "NER" for "named entity recognition", set abbr to "NER"). Set abbr to null if no abbreviation is used."""
 
     if allowed_topics:
         topics_list = "\n".join("- %s" % t for t in allowed_topics)
@@ -146,7 +147,7 @@ ALLOWED TOPICS:
 PAPERS:
 %s
 
-Return format: {"papers": [{"idx": 1, "topics": ["..."], "keywords": ["..."], "reasoning": "Selected because: ..."}]}""" % (keyword_rules, topics_list, titles_text)
+Return format: {"papers": [{"idx": 1, "topics": ["..."], "keywords": [{"term": "full keyword", "abbr": "ABBR or null"}], "reasoning": "Selected because: ..."}]}""" % (keyword_rules, topics_list, titles_text)
     else:
         prompt = """Respond with ONLY valid JSON, no other text or markdown.
 Classify these paper titles into a topic hierarchy. For each paper give:
@@ -158,7 +159,7 @@ Classify these paper titles into a topic hierarchy. For each paper give:
 Titles:
 %s
 
-Return format: {"papers": [{"idx": 1, "topics": ["..."], "keywords": ["..."]}]}""" % (keyword_rules, titles_text)
+Return format: {"papers": [{"idx": 1, "topics": ["..."], "keywords": [{"term": "full keyword", "abbr": "ABBR or null"}]}]}""" % (keyword_rules, titles_text)
 
     cmd = ["opencode", "run", "--format", "json", prompt]
 
@@ -385,8 +386,22 @@ def classify_conference(conf_name, limit=None, resume=False, abstract_only=False
                     orig_idx, pub = batch[idx]
                     key = "%s|||%s" % (pub['title'], pub.get('venue', ''))
 
+                    # Parse keywords — handle both new format [{"term","abbr"}] and old ["str"]
+                    raw_keywords_data = item.get('keywords', [])
+                    raw_keywords = []
+                    abbreviations = {}  # term -> abbr (many-to-many possible across papers)
+                    for kw_entry in raw_keywords_data:
+                        if isinstance(kw_entry, dict):
+                            term = kw_entry.get('term', '')
+                            abbr = kw_entry.get('abbr')
+                            if term:
+                                raw_keywords.append(term)
+                                if abbr and isinstance(abbr, str) and abbr.lower() != 'null':
+                                    abbreviations[term.lower()] = abbr.upper()
+                        elif isinstance(kw_entry, str):
+                            raw_keywords.append(kw_entry)
+
                     # Post-process keywords with normalization
-                    raw_keywords = item.get('keywords', [])
                     normalized_kw = normalize_keywords(raw_keywords, kw_set)
                     # Add normalized keywords to the existing set for future dedup
                     kw_set.update(normalized_kw)
@@ -394,6 +409,7 @@ def classify_conference(conf_name, limit=None, resume=False, abstract_only=False
                     classified[key] = {
                         'topics': item.get('topics', []),
                         'keywords': normalized_kw,
+                        'abbreviations': abbreviations,
                         'keywords_raw': raw_keywords,
                         'reasoning': item.get('reasoning', ''),
                         'year': pub.get('year', 0),
