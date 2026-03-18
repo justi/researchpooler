@@ -51,6 +51,19 @@ def depluralize_word(word):
     if len(word) <= 2:
         return word
 
+    # Words ending in these suffixes are NOT plural — don't touch
+    no_depluralize_suffixes = (
+        "sis",   # analysis, synthesis, hypothesis, basis, thesis
+        "ics",   # dynamics, semantics, statistics, graphics, robotics
+        "us",    # corpus, calculus, stimulus, nexus
+        "ss",    # loss, process, access, class
+        "ness",  # robustness, fairness, completeness
+        "ous",   # continuous, autonomous, heterogeneous
+        "ies",   # series (but not "categories" — handled by inflect)
+    )
+    if word.endswith(no_depluralize_suffixes):
+        return word
+
     singular = _engine.singular_noun(word)
     if singular and singular != word:
         return singular
