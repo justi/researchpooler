@@ -9,39 +9,9 @@ import inflect
 
 _engine = inflect.engine()
 
-# Terms that are inherently plural or should not be depluralized
+# Terms that should NOT be depluralized (truly invariant forms only)
 PLURAL_EXCEPTIONS = {
-    "neural networks",
-    "gaussian processes",
-    "kernel methods",
     "markov chain monte carlo",
-    "bayesian networks",
-    "support vector machines",
-    "random forests",
-    "decision trees",
-    "genetic algorithms",
-    "hidden markov models",
-    "graph neural networks",
-    "generative adversarial networks",
-    "recurrent neural networks",
-    "convolutional neural networks",
-    "large language models",
-    "diffusion models",
-    "generative models",
-    "language models",
-    "foundation models",
-    "transformer models",
-    "recommender systems",
-    "multi-agent systems",
-    "operating systems",
-    "distributed systems",
-    "control systems",
-    "formal methods",
-    "stochastic methods",
-    "online algorithms",
-    "data structures",
-    "knowledge graphs",
-    "graph embeddings",
 }
 
 
