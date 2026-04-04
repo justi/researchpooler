@@ -55,3 +55,24 @@ After scraping, import to research-explorer:
 ```bash
 cd ~/Projects/research-explorer && rake import:papers
 ```
+
+## Keyword normalization — spelling variants
+
+British/American spelling variants create duplicates that `merge_plurals` doesn't catch:
+
+| American | British | Example |
+|----------|---------|---------|
+| -izing | -ising | "tokenizing" vs "tokenising" |
+| -ization | -isation | "optimization" vs "optimisation" |
+| -eling | -elling | "labeling" vs "labelling" |
+| -eled | -elled | "modeled" vs "modelled" |
+| -or | -our | "behavior" vs "behaviour" |
+| -er | -re | "center" vs "centre" |
+
+Known duplicates found:
+- "sequence labeling" (607 papers) vs "sequence labelling" (19 papers)
+
+Options:
+1. Add spelling variant merge to `classify:merge_plurals` (or new task)
+2. Normalize in LLM prompt ("always use American English spelling")
+3. Normalize in `keyword_normalize.py` post-processing
