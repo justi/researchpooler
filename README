@@ -1,7 +1,9 @@
 REsearch POOLer (repool)
 Project site: https://sites.google.com/site/researchpooler/home
+Web interface (Stage 4 — live since 2026): https://conftrace.com
 
 Authors: Andrej Karpathy <karpathy@cs.stanford.edu> || <andrej.karpathy@gmail.com>, http://cs.stanford.edu/~karpathy/
+Stage 4 web UI by: Justyna Wojtczak <justine84@gmail.com> (github.com/justi)
 
 -------------------------------------------------------------------------------
 MOTIVATION AND PLAN
@@ -16,7 +18,14 @@ This set of tools is an initiative to fix this problem. Here's the master plan a
 STAGE 1 scripts: scripts for raw data gathering and parsing that output pickles in an intermediate dictionary-based representation. These will include mostly scripts that download files, parse HTML, etc.
 STAGE 2 scripts: scripts that enrich the intermediate representations from STAGE 1 in various ways. For example, a script could iterate over publications in database, and if it finds that some entry is missing its pdf contents, it could attempt a google search to find the pdf, and add it if successful.
 STAGE 3 scripts: tools and helper functions that can analyze the intermediate representations and produce higher level scripts that do more interesting things. For example, functionality such as 'find all documents that are similar to this one', or 'find object detection papers in psychology'. All kinds of fun Machine Learning can go here as well, like LDA etc.
-STAGE 4 files: create nice web-based UI (maybe using Google App Engine?) to make the project accessible and easy to use. These will be modules that interact with STAGE 3 scripts on the backend.
+STAGE 4 — DONE (2026): web-based UI at https://conftrace.com
+  - Browse 220k papers from 36 top CS/AI conferences (NeurIPS, ICML, ICLR, CVPR, ACL, ...)
+  - LLM-classified taxonomy of 290+ topics
+  - 17k keyword cloud with co-occurrence graph (Neo4j-powered /explore)
+  - Per-author profiles + 15 achievement badges
+  - Emerging terms detector + conference DNA
+  - Sitemap with 630k URLs for SEO
+  - Source: github.com/justi/research-explorer (Rails 8 + PostgreSQL + Neo4j)
 
 -------------------------------------------------------------------------------
 INSTALLATION
@@ -26,6 +35,7 @@ pip install -r requirements.txt
 Then run any scraper to generate its database:
 $> python nips_download_parse.py
 $> python nips_add_pdftext.py
+$> python nips_add_abstracts.py          # extract abstracts from HTML (fast)
 
 -------------------------------------------------------------------------------
 EXAMPLE USAGE
@@ -93,10 +103,24 @@ LLM-powered topic classification. Papers are tagged with topics from a
 controlled 3-level hierarchy (209 categories in taxonomy/config.yaml)
 and normalized keywords.
 
+Features:
+ - Chain-of-Thought reasoning (inspired by TopicGPT) — the LLM explains its
+   classification choices by citing words from the title/abstract
+ - Abstract-aware — when abstracts are available (e.g. via nips_add_abstracts.py),
+   they are included in the prompt for more accurate classification
+ - New topic suggestion — if no existing path fits, the LLM can propose a new
+   topic path prefixed with "Other:" instead of forcing a bad match
+
 Setup:
+   python nips_add_abstracts.py              # (optional) scrape NeurIPS abstracts
    python taxonomy/db.py --init              # create SQLite DB with all papers
    python taxonomy/classify.py --conf nips   # classify papers (uses OpenCode CLI)
    python taxonomy/db.py --import-taxonomy   # import classifications into DB
+
+Options:
+   python taxonomy/classify.py --resume           # resume from checkpoint
+   python taxonomy/classify.py --abstract-only    # only papers with abstracts
+   python taxonomy/classify.py --build-index      # build topic/keyword indexes
 
 Browse:
    python taxonomy/db.py --stats             # show statistics
@@ -129,7 +153,10 @@ Lastly, this representation is actually kinda neat because it lets you run all k
 PIPELINE
 -------------------------------------------------------------------------------
 STAGE 1: Scrapers (*_download_parse.py) fetch proceedings and save as pickles.
-STAGE 2: nips_add_pdftext.py downloads PDFs and extracts bag-of-words text.
+STAGE 2: Enrichment scripts add content to papers:
+         - nips_add_pdftext.py: downloads PDFs and extracts bag-of-words text
+         - nips_add_abstracts.py: extracts abstracts from NeurIPS HTML pages
+           (no PDF download needed — much faster than pdf_text extraction)
 STAGE 3: repool_analysis.py provides similarity search across publications.
 STAGE 4: taxonomy/ classifies papers into hierarchical topics + keywords.
 
