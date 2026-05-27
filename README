@@ -1,6 +1,6 @@
 REsearch POOLer (repool)
 Project site: https://sites.google.com/site/researchpooler/home
-Web interface (Stage 4 — live since 2026): https://conftrace.com
+Web interface (Stage 4 - live since 2026): https://conftrace.com
 
 Authors: Andrej Karpathy <karpathy@cs.stanford.edu> || <andrej.karpathy@gmail.com>, http://cs.stanford.edu/~karpathy/
 Stage 4 web UI by: Justyna Wojtczak <justine84@gmail.com> (github.com/justi)
@@ -18,7 +18,7 @@ This set of tools is an initiative to fix this problem. Here's the master plan a
 STAGE 1 scripts: scripts for raw data gathering and parsing that output pickles in an intermediate dictionary-based representation. These will include mostly scripts that download files, parse HTML, etc.
 STAGE 2 scripts: scripts that enrich the intermediate representations from STAGE 1 in various ways. For example, a script could iterate over publications in database, and if it finds that some entry is missing its pdf contents, it could attempt a google search to find the pdf, and add it if successful.
 STAGE 3 scripts: tools and helper functions that can analyze the intermediate representations and produce higher level scripts that do more interesting things. For example, functionality such as 'find all documents that are similar to this one', or 'find object detection papers in psychology'. All kinds of fun Machine Learning can go here as well, like LDA etc.
-STAGE 4 — DONE (2026): web-based UI at https://conftrace.com
+STAGE 4 - DONE (2026): web-based UI at https://conftrace.com
   - Browse 220k papers from 36 top CS/AI conferences (NeurIPS, ICML, ICLR, CVPR, ACL, ...)
   - LLM-classified taxonomy of 290+ topics
   - 17k keyword cloud with co-occurrence graph (Neo4j-powered /explore)
