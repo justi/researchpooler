@@ -8,7 +8,7 @@ the result as a pickle in current directory called pubs_alt.
 
 import urllib.request
 from bs4 import BeautifulSoup
-from repool_util import savePubs
+from repool_util import savePubs, loadPubs
 
 ALT_VOLUMES = {
     76: 2017,
@@ -20,12 +20,19 @@ ALT_VOLUMES = {
     201: 2023,
     237: 2024,
     272: 2025,
+    313: 2026,
 }
 
-pubs = []
+try:
+    pubs = loadPubs("pubs_alt")
+except (FileNotFoundError, EOFError):
+    pubs = []
+existing_years = {p.get("year") for p in pubs}
 warnings = []
 
 for vol, year in sorted(ALT_VOLUMES.items()):
+    if year in existing_years:
+        continue
     url = "https://proceedings.mlr.press/v%d/" % (vol,)
     print("downloading ALT %d (vol %d)..." % (year, vol))
 

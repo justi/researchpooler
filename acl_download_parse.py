@@ -8,14 +8,21 @@ about each publication, and saves the result as a pickle called pubs_acl.
 
 import urllib.request
 from bs4 import BeautifulSoup
-from repool_util import savePubs
+from repool_util import savePubs, loadPubs
 
 BASE_URL = "https://aclanthology.org"
 
-pubs = []
+try:
+    pubs = loadPubs("pubs_acl")
+except (FileNotFoundError, EOFError):
+    pubs = []
+existing_years = {p.get("year") for p in pubs}
 warnings = []
 
-for year in range(2000, 2026):
+for year in range(2000, 2027):
+    if year in existing_years:
+        print("ACL %d already present, skipping." % (year,))
+        continue
     url = "%s/events/acl-%d/" % (BASE_URL, year)
     print("downloading ACL %d..." % (year,))
 

@@ -9,7 +9,7 @@ called pubs_midl.
 
 import urllib.request
 from bs4 import BeautifulSoup
-from repool_util import savePubs
+from repool_util import savePubs, loadPubs
 
 MIDL_VOLUMES = {
     102: 2019,
@@ -18,12 +18,20 @@ MIDL_VOLUMES = {
     172: 2022,
     227: 2023,
     250: 2024,
+    301: 2025,
+    315: 2026,
 }
 
-pubs = []
+try:
+    pubs = loadPubs("pubs_midl")
+except (FileNotFoundError, EOFError):
+    pubs = []
+existing_years = {p.get("year") for p in pubs}
 warnings = []
 
 for vol, year in sorted(MIDL_VOLUMES.items()):
+    if year in existing_years:
+        continue
     url = "https://proceedings.mlr.press/v%d/" % (vol,)
     print("downloading MIDL %d (vol %d)..." % (year, vol))
 
