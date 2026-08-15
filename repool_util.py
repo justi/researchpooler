@@ -48,7 +48,7 @@ def stringToWordDictionary(str):
     returns dictionary of word counts for each word. Example: d['hello'] -> 5
     """
     str = str.lower() #convert to lower case
-    m = re.findall('[a-zA-Z\-]+', str)
+    m = re.findall(r'[a-zA-Z\-]+', str)
     m = [x for x in m if len(x) > 2] #filter out small words
     
     # count number of occurences of each word in dict and return it
@@ -69,3 +69,53 @@ def stringToWordDictionary(str):
         d.pop(k, None)
     
     return d
+
+
+# ---------------------------------------------------------------------------
+# Incremental-scrape helpers (shared by every *_download_parse.py)
+# ---------------------------------------------------------------------------
+
+def pubKey(pub):
+    """Stable identity of a publication: title|||venue."""
+    return "%s|||%s" % (pub.get("title", ""), pub.get("venue", ""))
+
+def loadPubsIncremental(filename):
+    """
+    Load an existing pubs pickle for an incremental re-scrape.
+    filename: string
+    returns (pubs, keys, years): the list plus lookup sets used to skip
+    already-scraped papers (keys, per title|||venue) or whole years (years).
+    """
+    try:
+        pubs = loadPubs(filename)
+        print("loaded %d existing publications." % (len(pubs),))
+    except Exception:
+        pubs = []
+    return pubs, {pubKey(p) for p in pubs}, {p.get("year") for p in pubs}
+
+def addPub(pubs, keys, new_pub):
+    """Append new_pub unless its title|||venue is already present."""
+    key = pubKey(new_pub)
+    if key in keys:
+        return False
+    keys.add(key)
+    pubs.append(new_pub)
+    return True
+
+def discoverPmlrVolumes(abbr):
+    """
+    {volume_number: year} for a venue on the proceedings.mlr.press index,
+    so scrapers never hardcode a volume/year map.
+    abbr: string as it appears in "Proceedings of <abbr> <year>" (e.g. "COLT")
+    """
+    import urllib.request
+    line = re.compile(
+        r'<li>\s*<a href="(v\d+|r\d+)"[^>]*><b>Volume [^<]+</b></a>'
+        r'\s*Proceedings of\s+(\S+)\s+(\d{4})')
+    req = urllib.request.Request("https://proceedings.mlr.press/",
+                                 headers={"User-Agent": "Mozilla/5.0"})
+    with urllib.request.urlopen(req) as f:
+        body = f.read().decode("utf-8", "replace")
+    vols = {int(v[1:]): int(y) for v, a, y in line.findall(body) if a == abbr}
+    print("discovered %s volumes on PMLR: %s" % (abbr, sorted(vols.items())))
+    return vols

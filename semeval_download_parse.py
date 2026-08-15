@@ -9,16 +9,11 @@ about each publication, and saves the result as a pickle called pubs_semeval.
 import urllib.request
 from bs4 import BeautifulSoup
 from datetime import date
-from repool_util import savePubs, loadPubs
+from repool_util import savePubs, loadPubsIncremental
 
 BASE_URL = "https://aclanthology.org"
 
-try:
-    pubs = loadPubs("pubs_semeval")
-    print("loaded %d existing publications." % (len(pubs),))
-except Exception:
-    pubs = []
-existing_years = {p.get("year") for p in pubs}
+pubs, existing_keys, existing_years = loadPubsIncremental("pubs_semeval")
 warnings = []
 
 for year in range(2007, date.today().year + 1):

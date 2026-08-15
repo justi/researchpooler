@@ -12,7 +12,7 @@ import urllib.request
 from datetime import date
 import re
 from bs4 import BeautifulSoup
-from repool_util import savePubs, loadPubs
+from repool_util import savePubs, loadPubsIncremental
 
 BASE_URL = "https://www.ecva.net"
 PAPERS_URL = BASE_URL + "/papers.php"
@@ -115,14 +115,7 @@ except Exception as e:
     print("error fetching papers page: %s" % (e,))
     raise SystemExit(1)
 
-# Incremental: keep already-scraped years (and their abstracts); only
-# missing years are fetched.
-try:
-    pubs = loadPubs("pubs_eccv")
-    print("loaded %d existing publications." % (len(pubs),))
-except Exception:
-    pubs = []
-existing_years = {p.get("year") for p in pubs}
+pubs, existing_keys, existing_years = loadPubsIncremental("pubs_eccv")
 warnings = []
 
 for year in range(2018, date.today().year + 1, 2):  # even years only

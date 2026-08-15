@@ -6,37 +6,13 @@ dictionaries that store information about each publication, and saves
 the result as a pickle in current directory called pubs_icml.
 """
 
-import re
 import urllib.request
 from bs4 import BeautifulSoup
-from repool_util import savePubs, loadPubs
+from repool_util import savePubs, loadPubsIncremental, addPub, discoverPmlrVolumes
 
-INDEX_URL = "https://proceedings.mlr.press/"
-VOLUME_LINE = re.compile(
-    r'<li>\s*<a href="(v\d+|r\d+)"[^>]*><b>Volume [^<]+</b></a>\s*Proceedings of\s+(\S+)\s+(\d{4})')
+ICML_VOLUMES = discoverPmlrVolumes("ICML")
 
-
-def discover_volumes():
-    """Return {volume_number: year} for every ICML volume on the PMLR index."""
-    req = urllib.request.Request(INDEX_URL, headers={'User-Agent': 'Mozilla/5.0'})
-    with urllib.request.urlopen(req) as f:
-        body = f.read().decode('utf-8', 'replace')
-    vols = {}
-    for vol_id, abbr, year in VOLUME_LINE.findall(body):
-        if abbr == 'ICML':
-            vols[int(vol_id[1:])] = int(year)
-    return vols
-
-
-ICML_VOLUMES = discover_volumes()
-print("discovered ICML volumes on PMLR: %s" % (sorted(ICML_VOLUMES.items()),))
-
-try:
-    pubs = loadPubs("pubs_icml")
-    print("loaded %d existing publications." % (len(pubs),))
-except Exception:
-    pubs = []
-existing_keys = {"%s|||%s" % (p.get("title", ""), p.get("venue", "")) for p in pubs}
+pubs, existing_keys, existing_years = loadPubsIncremental("pubs_icml")
 warnings = []
 
 for vol, year in sorted(ICML_VOLUMES.items()):
@@ -85,10 +61,7 @@ for vol, year in sorted(ICML_VOLUMES.items()):
 
         new_pub['venue'] = venue
         new_pub['year'] = year
-        key = "%s|||%s" % (new_pub.get('title', ''), new_pub.get('venue', ''))
-        if key not in existing_keys:
-            existing_keys.add(key)
-            pubs.append(new_pub)
+        addPub(pubs, existing_keys, new_pub)
 
     print("read in %d publications for ICML %d." % (len(pubs) - old_count, year))
 

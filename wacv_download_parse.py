@@ -9,7 +9,7 @@ the result as a pickle in current directory called pubs_wacv.
 import urllib.request
 from datetime import date
 from bs4 import BeautifulSoup
-from repool_util import savePubs, loadPubs
+from repool_util import savePubs, loadPubsIncremental
 
 BASE_URL = "https://openaccess.thecvf.com"
 
@@ -95,14 +95,7 @@ def parse_papers(html, venue, year):
     return results
 
 
-# Incremental: keep already-scraped years (and their abstracts); only
-# missing years are fetched.
-try:
-    pubs = loadPubs("pubs_wacv")
-    print("loaded %d existing publications." % (len(pubs),))
-except Exception:
-    pubs = []
-existing_years = {p.get("year") for p in pubs}
+pubs, existing_keys, existing_years = loadPubsIncremental("pubs_wacv")
 warnings = []
 
 for year in range(2020, date.today().year + 1):

@@ -20,7 +20,7 @@ from datetime import date
 import urllib.parse
 import json
 import time
-from repool_util import savePubs, loadPubs
+from repool_util import savePubs, loadPubsIncremental
 
 OPENREVIEW_V1 = "https://api.openreview.net"
 OPENREVIEW_V2 = "https://api2.openreview.net"
@@ -234,14 +234,7 @@ def fetch_iclr_v1_decisions(year):
 # Main
 # --------------------------------------------------------------------------
 
-# Incremental: keep already-scraped years (and their abstracts); only
-# missing years are fetched.
-try:
-    pubs = loadPubs("pubs_iclr")
-    print("loaded %d existing publications." % (len(pubs),))
-except Exception:
-    pubs = []
-existing_years = {p.get("year") for p in pubs}
+pubs, existing_keys, existing_years = loadPubsIncremental("pubs_iclr")
 warnings = []
 
 for year in range(2018, date.today().year + 1):

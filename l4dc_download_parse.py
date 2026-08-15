@@ -7,37 +7,13 @@ about each publication, and saves the result as a pickle in current directory
 called pubs_l4dc.
 """
 
-import re
 import urllib.request
 from bs4 import BeautifulSoup
-from repool_util import savePubs, loadPubs
+from repool_util import savePubs, loadPubsIncremental, discoverPmlrVolumes
 
-INDEX_URL = "https://proceedings.mlr.press/"
-VOLUME_LINE = re.compile(
-    r'<li>\s*<a href="(v\d+|r\d+)"[^>]*><b>Volume [^<]+</b></a>\s*Proceedings of\s+(\S+)\s+(\d{4})')
+L4DC_VOLUMES = discoverPmlrVolumes("L4DC")
 
-
-def discover_volumes():
-    """Return {volume_number: year} for every L4DC volume on the PMLR index."""
-    req = urllib.request.Request(INDEX_URL, headers={'User-Agent': 'Mozilla/5.0'})
-    with urllib.request.urlopen(req) as f:
-        body = f.read().decode('utf-8', 'replace')
-    vols = {}
-    for vol_id, abbr, year in VOLUME_LINE.findall(body):
-        if abbr == 'L4DC':
-            vols[int(vol_id[1:])] = int(year)
-    return vols
-
-
-L4DC_VOLUMES = discover_volumes()
-print("discovered L4DC volumes on PMLR: %s" % (sorted(L4DC_VOLUMES.items()),))
-
-try:
-    pubs = loadPubs("pubs_l4dc")
-    print("loaded %d existing publications." % (len(pubs),))
-except Exception:
-    pubs = []
-existing_years = {p.get("year") for p in pubs}
+pubs, existing_keys, existing_years = loadPubsIncremental("pubs_l4dc")
 warnings = []
 
 for vol, year in sorted(L4DC_VOLUMES.items()):

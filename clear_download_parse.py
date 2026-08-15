@@ -13,37 +13,13 @@ up as soon as PMLR lists it. Incremental: loads the existing pubs_clear and
 only fetches years not present yet, so re-runs never drop earlier years.
 """
 
-import re
 import urllib.request
 from bs4 import BeautifulSoup
-from repool_util import savePubs, loadPubs
+from repool_util import savePubs, loadPubsIncremental, discoverPmlrVolumes
 
-INDEX_URL = "https://proceedings.mlr.press/"
-VOLUME_LINE = re.compile(
-    r'<li>\s*<a href="(v\d+|r\d+)"[^>]*><b>Volume [^<]+</b></a>\s*Proceedings of\s+(\S+)\s+(\d{4})')
+CLEAR_VOLUMES = discoverPmlrVolumes("CLeaR")
 
-
-def discover_volumes():
-    """Return {volume_number: year} for every CLeaR volume on the PMLR index."""
-    req = urllib.request.Request(INDEX_URL, headers={'User-Agent': 'Mozilla/5.0'})
-    with urllib.request.urlopen(req) as f:
-        body = f.read().decode('utf-8', 'replace')
-    vols = {}
-    for vol_id, abbr, year in VOLUME_LINE.findall(body):
-        if abbr == 'CLeaR':
-            vols[int(vol_id[1:])] = int(year)
-    return vols
-
-
-CLEAR_VOLUMES = discover_volumes()
-print("discovered CLeaR volumes on PMLR: %s" % (sorted(CLEAR_VOLUMES.items()),))
-
-try:
-    pubs = loadPubs("pubs_clear")
-    print("loaded %d existing publications." % (len(pubs),))
-except Exception:
-    pubs = []
-existing_years = {p.get("year") for p in pubs}
+pubs, existing_keys, existing_years = loadPubsIncremental("pubs_clear")
 warnings = []
 
 for vol, year in sorted(CLEAR_VOLUMES.items()):
