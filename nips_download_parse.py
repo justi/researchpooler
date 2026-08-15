@@ -7,14 +7,16 @@ pickle in current directory called pubs_nips.
 """
 
 import urllib.request
-from datetime import datetime
 from bs4 import BeautifulSoup
-from repool_util import savePubs
+from repool_util import savePubs, loadPubsIncremental, addPub, scrapeYears
 
-pubs = []
+pubs, existing_keys, existing_years = loadPubsIncremental("pubs_nips")
 warnings = []
 
-for year in range(2006, datetime.now().year + 1):
+FIRST_YEAR = 2006  # earliest edition available at the source
+for year in scrapeYears(FIRST_YEAR):
+    # No year-skip: a year can be published PARTIALLY (2025 = only the
+    # creative track for months) - dedup happens per paper below.
     url = "https://proceedings.neurips.cc/paper_files/paper/%d" % (year,)
     print("downloading proceedings from NeurIPS year %d..." % (year,))
 
@@ -66,7 +68,7 @@ for year in range(2006, datetime.now().year + 1):
 
         new_pub['venue'] = venue
         new_pub['year'] = year
-        pubs.append(new_pub)
+        addPub(pubs, existing_keys, new_pub)
 
     print("read in %d publications for year %d." % (len(pubs) - old_count, year))
 

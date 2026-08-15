@@ -137,8 +137,9 @@ def main():
     for p in pubs:
         if p.get("abstract"):
             continue  # already has abstract
-        if not p.get("pdf") or "Abstract" not in p.get("pdf", ""):
-            continue  # no abstract URL
+        if "Abstract" not in p.get("url", "") and "Abstract" not in p.get("pdf", ""):
+            continue  # no abstract page URL (url holds it since the pdf
+            # field was repointed at the direct -Paper.pdf by the scraper)
         if args.year and p.get("year") != args.year:
             continue
         to_process.append(p)
@@ -157,7 +158,7 @@ def main():
     failed = 0
 
     for i, p in enumerate(to_process):
-        url = p["pdf"]
+        url = p["url"] if "Abstract" in p.get("url", "") else p["pdf"]
         abstract = fetch_abstract(url)
 
         if abstract:

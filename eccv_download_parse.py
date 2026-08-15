@@ -11,7 +11,7 @@ ECCV occurs every 2 years (even years only).
 import urllib.request
 import re
 from bs4 import BeautifulSoup
-from repool_util import savePubs
+from repool_util import savePubs, loadPubsIncremental, scrapeYears
 
 BASE_URL = "https://www.ecva.net"
 PAPERS_URL = BASE_URL + "/papers.php"
@@ -114,10 +114,13 @@ except Exception as e:
     print("error fetching papers page: %s" % (e,))
     raise SystemExit(1)
 
-pubs = []
+pubs, existing_keys, existing_years = loadPubsIncremental("pubs_eccv")
 warnings = []
 
-for year in range(2018, 2026, 2):  # even years only
+FIRST_YEAR = 2018  # earliest edition available at the source
+for year in scrapeYears(FIRST_YEAR, step=2):  # even years only
+    if year in existing_years:
+        continue
     print("parsing ECCV %d..." % (year,))
 
     # Find the accordion section for this year

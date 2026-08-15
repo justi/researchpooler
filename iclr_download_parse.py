@@ -19,11 +19,16 @@ import urllib.request
 import urllib.parse
 import json
 import time
-from repool_util import savePubs
+from repool_util import savePubs, loadPubsIncremental, scrapeYears
 
 OPENREVIEW_V1 = "https://api.openreview.net"
 OPENREVIEW_V2 = "https://api2.openreview.net"
-HEADERS = {'User-Agent': 'Mozilla/5.0'}
+HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Accept': 'application/json',
+    'Origin': 'https://openreview.net',
+    'Referer': 'https://openreview.net/',
+}
 PAGE_SIZE = 1000
 
 
@@ -228,10 +233,13 @@ def fetch_iclr_v1_decisions(year):
 # Main
 # --------------------------------------------------------------------------
 
-pubs = []
+pubs, existing_keys, existing_years = loadPubsIncremental("pubs_iclr")
 warnings = []
 
-for year in range(2018, 2026):
+FIRST_YEAR = 2018  # earliest edition available at the source
+for year in scrapeYears(FIRST_YEAR):
+    if year in existing_years:
+        continue
     print("downloading proceedings from ICLR %d..." % year)
 
     try:

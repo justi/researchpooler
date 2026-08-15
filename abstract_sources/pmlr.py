@@ -14,6 +14,22 @@ class PmlrSource(AbstractSource):
     def transform_url(self, pdf_url):
         if not pdf_url:
             return None
+        # Recent volumes serve the PDF from GitHub raw, but the abstract page
+        # still lives on proceedings.mlr.press. Map e.g.
+        #   https://raw.githubusercontent.com/mlresearch/v315/main/assets/chen26a/chen26a.pdf
+        #   -> https://proceedings.mlr.press/v315/chen26a.html
+        if "raw.githubusercontent.com/mlresearch/" in pdf_url:
+            parts = pdf_url.split("/")
+            try:
+                vol = parts[parts.index("mlresearch") + 1]
+            except (ValueError, IndexError):
+                return None
+            paper_id = parts[-1]
+            if paper_id.endswith(".pdf"):
+                paper_id = paper_id[:-4]
+            if not vol or not paper_id:
+                return None
+            return "https://proceedings.mlr.press/%s/%s.html" % (vol, paper_id)
         # New format: .../v202/aamand23a/aamand23a.pdf -> .../v202/aamand23a.html
         # Old format: .../v28/sznitman13.pdf -> .../v28/sznitman13.html
         if pdf_url.endswith(".pdf"):

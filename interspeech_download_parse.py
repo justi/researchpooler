@@ -8,14 +8,15 @@ the result as a pickle called pubs_interspeech.
 
 import urllib.request
 from bs4 import BeautifulSoup
-from repool_util import savePubs
+from repool_util import savePubs, loadPubsIncremental, addPub, scrapeYears
 
 BASE_URL = "https://www.isca-archive.org"
 
-pubs = []
+pubs, existing_keys, existing_years = loadPubsIncremental("pubs_interspeech")
 warnings = []
 
-for year in range(2016, 2025):
+FIRST_YEAR = 2016  # earliest edition available at the source
+for year in scrapeYears(FIRST_YEAR):
     url = "%s/interspeech_%d/" % (BASE_URL, year)
     print("downloading INTERSPEECH %d..." % (year,))
 
@@ -76,7 +77,7 @@ for year in range(2016, 2025):
 
         new_pub['venue'] = venue
         new_pub['year'] = year
-        pubs.append(new_pub)
+        addPub(pubs, existing_keys, new_pub)
 
         # Restore the span so we don't break parsing of subsequent elements
         if span_clone:
