@@ -6,32 +6,42 @@ dictionaries that store information about each publication, and saves
 the result as a pickle in current directory called pubs_acml.
 """
 
+import re
 import urllib.request
 from bs4 import BeautifulSoup
-from repool_util import savePubs
+from repool_util import savePubs, loadPubs
 
-ACML_VOLUMES = {
-    13: 2010,
-    20: 2011,
-    25: 2012,
-    29: 2013,
-    39: 2014,
-    45: 2015,
-    63: 2016,
-    77: 2017,
-    95: 2018,
-    101: 2019,
-    129: 2020,
-    157: 2021,
-    189: 2022,
-    222: 2023,
-    260: 2024,
-}
+INDEX_URL = "https://proceedings.mlr.press/"
+VOLUME_LINE = re.compile(
+    r'<li>\s*<a href="(v\d+|r\d+)"[^>]*><b>Volume [^<]+</b></a>\s*Proceedings of\s+(\S+)\s+(\d{4})')
 
-pubs = []
+
+def discover_volumes():
+    """Return {volume_number: year} for every ACML volume on the PMLR index."""
+    req = urllib.request.Request(INDEX_URL, headers={'User-Agent': 'Mozilla/5.0'})
+    with urllib.request.urlopen(req) as f:
+        body = f.read().decode('utf-8', 'replace')
+    vols = {}
+    for vol_id, abbr, year in VOLUME_LINE.findall(body):
+        if abbr == 'ACML':
+            vols[int(vol_id[1:])] = int(year)
+    return vols
+
+
+ACML_VOLUMES = discover_volumes()
+print("discovered ACML volumes on PMLR: %s" % (sorted(ACML_VOLUMES.items()),))
+
+try:
+    pubs = loadPubs("pubs_acml")
+    print("loaded %d existing publications." % (len(pubs),))
+except Exception:
+    pubs = []
+existing_years = {p.get("year") for p in pubs}
 warnings = []
 
 for vol, year in sorted(ACML_VOLUMES.items()):
+    if year in existing_years:
+        continue
     url = "https://proceedings.mlr.press/v%d/" % (vol,)
     print("downloading ACML %d (vol %d)..." % (year, vol))
 

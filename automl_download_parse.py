@@ -6,19 +6,37 @@ of dictionaries that store information about each publication, and saves the
 result as a pickle in current directory called pubs_automl.
 """
 
+import re
 import urllib.request
 from bs4 import BeautifulSoup
-from repool_util import savePubs
+from repool_util import savePubs, loadPubs
 
-AUTOML_VOLUMES = {
-    64: 2016,
-    188: 2022,
-    224: 2023,
-    256: 2024,
-    293: 2025,
-}
+INDEX_URL = "https://proceedings.mlr.press/"
+VOLUME_LINE = re.compile(
+    r'<li>\s*<a href="(v\d+|r\d+)"[^>]*><b>Volume [^<]+</b></a>\s*Proceedings of\s+(\S+)\s+(\d{4})')
 
-pubs = []
+
+def discover_volumes():
+    """Return {volume_number: year} for every AutoML volume on the PMLR index."""
+    req = urllib.request.Request(INDEX_URL, headers={'User-Agent': 'Mozilla/5.0'})
+    with urllib.request.urlopen(req) as f:
+        body = f.read().decode('utf-8', 'replace')
+    vols = {}
+    for vol_id, abbr, year in VOLUME_LINE.findall(body):
+        if abbr == 'AutoML':
+            vols[int(vol_id[1:])] = int(year)
+    return vols
+
+
+AUTOML_VOLUMES = discover_volumes()
+print("discovered AutoML volumes on PMLR: %s" % (sorted(AUTOML_VOLUMES.items()),))
+
+try:
+    pubs = loadPubs("pubs_automl")
+    print("loaded %d existing publications." % (len(pubs),))
+except Exception:
+    pubs = []
+existing_keys = {"%s|||%s" % (p.get("title", ""), p.get("venue", "")) for p in pubs}
 warnings = []
 
 for vol, year in sorted(AUTOML_VOLUMES.items()):
@@ -63,7 +81,10 @@ for vol, year in sorted(AUTOML_VOLUMES.items()):
 
         new_pub['venue'] = venue
         new_pub['year'] = year
-        pubs.append(new_pub)
+        key = "%s|||%s" % (new_pub.get('title', ''), new_pub.get('venue', ''))
+        if key not in existing_keys:
+            existing_keys.add(key)
+            pubs.append(new_pub)
 
     print("read in %d publications for AutoML %d." % (len(pubs) - old_count, year))
 

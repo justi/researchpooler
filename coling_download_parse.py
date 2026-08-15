@@ -8,14 +8,22 @@ about each publication, and saves the result as a pickle called pubs_coling.
 
 import urllib.request
 from bs4 import BeautifulSoup
-from repool_util import savePubs
+from datetime import date
+from repool_util import savePubs, loadPubs
 
 BASE_URL = "https://aclanthology.org"
 
-pubs = []
+# Incremental: keep everything already scraped (abstracts included); dedup
+# per title|||venue - a year can be published partially (nips lesson).
+try:
+    pubs = loadPubs("pubs_coling")
+    print("loaded %d existing publications." % (len(pubs),))
+except Exception:
+    pubs = []
+existing_keys = {"%s|||%s" % (p.get("title", ""), p.get("venue", "")) for p in pubs}
 warnings = []
 
-for year in range(2000, 2026):
+for year in range(2000, date.today().year + 1):
     url = "%s/events/coling-%d/" % (BASE_URL, year)
     print("downloading COLING %d..." % (year,))
 
@@ -69,7 +77,10 @@ for year in range(2000, 2026):
 
         new_pub['venue'] = venue
         new_pub['year'] = year
-        pubs.append(new_pub)
+        key = "%s|||%s" % (new_pub.get('title', ''), new_pub.get('venue', ''))
+        if key not in existing_keys:
+            existing_keys.add(key)
+            pubs.append(new_pub)
 
     print("read in %d publications for COLING %d." % (len(pubs) - old_count, year))
 

@@ -7,20 +7,31 @@ about each publication, and saves the result as a pickle in current directory
 called pubs_midl.
 """
 
+import re
 import urllib.request
+from datetime import date
 from bs4 import BeautifulSoup
 from repool_util import savePubs, loadPubs
 
-MIDL_VOLUMES = {
-    102: 2019,
-    121: 2020,
-    143: 2021,
-    172: 2022,
-    227: 2023,
-    250: 2024,
-    301: 2025,
-    315: 2026,
-}
+INDEX_URL = "https://proceedings.mlr.press/"
+VOLUME_LINE = re.compile(
+    r'<li>\s*<a href="(v\d+|r\d+)"[^>]*><b>Volume [^<]+</b></a>\s*Proceedings of\s+(\S+)\s+(\d{4})')
+
+
+def discover_volumes():
+    """Return {volume_number: year} for every MIDL volume on the PMLR index."""
+    req = urllib.request.Request(INDEX_URL, headers={'User-Agent': 'Mozilla/5.0'})
+    with urllib.request.urlopen(req) as f:
+        body = f.read().decode('utf-8', 'replace')
+    vols = {}
+    for vol_id, abbr, year in VOLUME_LINE.findall(body):
+        if abbr == 'MIDL':
+            vols[int(vol_id[1:])] = int(year)
+    return vols
+
+
+MIDL_VOLUMES = discover_volumes()
+print("discovered MIDL volumes on PMLR: %s" % (sorted(MIDL_VOLUMES.items()),))
 
 try:
     pubs = loadPubs("pubs_midl")

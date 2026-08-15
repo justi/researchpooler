@@ -10,8 +10,9 @@ As of writing, only MICCAI 2024 and 2025 are available on the site.
 """
 
 import urllib.request
+from datetime import date
 from bs4 import BeautifulSoup
-from repool_util import savePubs
+from repool_util import savePubs, loadPubs
 
 BASE_URL = "https://papers.miccai.org"
 
@@ -78,10 +79,19 @@ def parse_papers(html, year):
     return results
 
 
-pubs = []
+# Incremental: keep already-scraped years (and their abstracts); only
+# missing years are fetched.
+try:
+    pubs = loadPubs("pubs_miccai")
+    print("loaded %d existing publications." % (len(pubs),))
+except Exception:
+    pubs = []
+existing_years = {p.get("year") for p in pubs}
 warnings = []
 
-for year in range(2024, 2027):
+for year in range(2024, date.today().year + 1):
+    if year in existing_years:
+        continue
     url = "%s/miccai-%d/" % (BASE_URL, year)
     print("downloading MICCAI %d from %s ..." % (year, url))
 

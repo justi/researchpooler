@@ -7,15 +7,24 @@ the result as a pickle called pubs_interspeech.
 """
 
 import urllib.request
+from datetime import date
 from bs4 import BeautifulSoup
-from repool_util import savePubs
+from repool_util import savePubs, loadPubs
 
 BASE_URL = "https://www.isca-archive.org"
 
-pubs = []
+# Incremental: keep everything already scraped (abstracts included) and
+# dedup per title|||venue - a year can be published partially, so no
+# year-level skipping (the nips lesson).
+try:
+    pubs = loadPubs("pubs_interspeech")
+    print("loaded %d existing publications." % (len(pubs),))
+except Exception:
+    pubs = []
+existing_keys = {"%s|||%s" % (p.get("title", ""), p.get("venue", "")) for p in pubs}
 warnings = []
 
-for year in range(2016, 2025):
+for year in range(2016, date.today().year + 1):
     url = "%s/interspeech_%d/" % (BASE_URL, year)
     print("downloading INTERSPEECH %d..." % (year,))
 
@@ -76,7 +85,10 @@ for year in range(2016, 2025):
 
         new_pub['venue'] = venue
         new_pub['year'] = year
-        pubs.append(new_pub)
+        key = "%s|||%s" % (new_pub['title'], venue)
+        if key not in existing_keys:
+            existing_keys.add(key)
+            pubs.append(new_pub)
 
         # Restore the span so we don't break parsing of subsequent elements
         if span_clone:

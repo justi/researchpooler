@@ -7,8 +7,9 @@ the result as a pickle in current directory called pubs_wacv.
 """
 
 import urllib.request
+from datetime import date
 from bs4 import BeautifulSoup
-from repool_util import savePubs
+from repool_util import savePubs, loadPubs
 
 BASE_URL = "https://openaccess.thecvf.com"
 
@@ -94,10 +95,19 @@ def parse_papers(html, venue, year):
     return results
 
 
-pubs = []
+# Incremental: keep already-scraped years (and their abstracts); only
+# missing years are fetched.
+try:
+    pubs = loadPubs("pubs_wacv")
+    print("loaded %d existing publications." % (len(pubs),))
+except Exception:
+    pubs = []
+existing_years = {p.get("year") for p in pubs}
 warnings = []
 
-for year in range(2020, 2027):
+for year in range(2020, date.today().year + 1):
+    if year in existing_years:
+        continue
     print("downloading WACV %d..." % (year,))
 
     try:

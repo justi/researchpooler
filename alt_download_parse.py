@@ -6,22 +6,31 @@ dictionaries that store information about each publication, and saves
 the result as a pickle in current directory called pubs_alt.
 """
 
+import re
 import urllib.request
+from datetime import date
 from bs4 import BeautifulSoup
 from repool_util import savePubs, loadPubs
 
-ALT_VOLUMES = {
-    76: 2017,
-    83: 2018,
-    98: 2019,
-    117: 2020,
-    132: 2021,
-    167: 2022,
-    201: 2023,
-    237: 2024,
-    272: 2025,
-    313: 2026,
-}
+INDEX_URL = "https://proceedings.mlr.press/"
+VOLUME_LINE = re.compile(
+    r'<li>\s*<a href="(v\d+|r\d+)"[^>]*><b>Volume [^<]+</b></a>\s*Proceedings of\s+(\S+)\s+(\d{4})')
+
+
+def discover_volumes():
+    """Return {volume_number: year} for every ALT volume on the PMLR index."""
+    req = urllib.request.Request(INDEX_URL, headers={'User-Agent': 'Mozilla/5.0'})
+    with urllib.request.urlopen(req) as f:
+        body = f.read().decode('utf-8', 'replace')
+    vols = {}
+    for vol_id, abbr, year in VOLUME_LINE.findall(body):
+        if abbr == 'ALT':
+            vols[int(vol_id[1:])] = int(year)
+    return vols
+
+
+ALT_VOLUMES = discover_volumes()
+print("discovered ALT volumes on PMLR: %s" % (sorted(ALT_VOLUMES.items()),))
 
 try:
     pubs = loadPubs("pubs_alt")

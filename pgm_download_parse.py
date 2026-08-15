@@ -7,22 +7,42 @@ about each publication, and saves the result as a pickle in current directory
 called pubs_pgm.
 """
 
+import re
 import urllib.request
 from bs4 import BeautifulSoup
-from repool_util import savePubs
+from repool_util import savePubs, loadPubs
 
-PGM_VOLUMES = {
-    52: 2016,
-    72: 2018,
-    138: 2020,
-    186: 2022,
-    246: 2024,
-}
+INDEX_URL = "https://proceedings.mlr.press/"
+VOLUME_LINE = re.compile(
+    r'<li>\s*<a href="(v\d+|r\d+)"[^>]*><b>Volume [^<]+</b></a>\s*Proceedings of\s+(\S+)\s+(\d{4})')
 
-pubs = []
+
+def discover_volumes():
+    """Return {volume_number: year} for every PGM volume on the PMLR index."""
+    req = urllib.request.Request(INDEX_URL, headers={'User-Agent': 'Mozilla/5.0'})
+    with urllib.request.urlopen(req) as f:
+        body = f.read().decode('utf-8', 'replace')
+    vols = {}
+    for vol_id, abbr, year in VOLUME_LINE.findall(body):
+        if abbr == 'PGM':
+            vols[int(vol_id[1:])] = int(year)
+    return vols
+
+
+PGM_VOLUMES = discover_volumes()
+print("discovered PGM volumes on PMLR: %s" % (sorted(PGM_VOLUMES.items()),))
+
+try:
+    pubs = loadPubs("pubs_pgm")
+    print("loaded %d existing publications." % (len(pubs),))
+except Exception:
+    pubs = []
+existing_years = {p.get("year") for p in pubs}
 warnings = []
 
 for vol, year in sorted(PGM_VOLUMES.items()):
+    if year in existing_years:
+        continue
     url = "https://proceedings.mlr.press/v%d/" % (vol,)
     print("downloading PGM %d (vol %d)..." % (year, vol))
 

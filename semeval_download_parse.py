@@ -8,14 +8,22 @@ about each publication, and saves the result as a pickle called pubs_semeval.
 
 import urllib.request
 from bs4 import BeautifulSoup
-from repool_util import savePubs
+from datetime import date
+from repool_util import savePubs, loadPubs
 
 BASE_URL = "https://aclanthology.org"
 
-pubs = []
+try:
+    pubs = loadPubs("pubs_semeval")
+    print("loaded %d existing publications." % (len(pubs),))
+except Exception:
+    pubs = []
+existing_years = {p.get("year") for p in pubs}
 warnings = []
 
-for year in range(2007, 2027):
+for year in range(2007, date.today().year + 1):
+    if year in existing_years:
+        continue
     url = "%s/events/semeval-%d/" % (BASE_URL, year)
     print("downloading SemEval %d..." % (year,))
 

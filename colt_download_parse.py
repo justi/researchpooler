@@ -7,32 +7,42 @@ information about each publication, and saves the result as a pickle
 called pubs_colt.
 """
 
+import re
 import urllib.request
 from bs4 import BeautifulSoup
-from repool_util import savePubs
+from repool_util import savePubs, loadPubs
 
-COLT_VOLUMES = {
-    19: 2011,
-    23: 2012,
-    30: 2013,
-    35: 2014,
-    40: 2015,
-    49: 2016,
-    65: 2017,
-    75: 2018,
-    99: 2019,
-    125: 2020,
-    134: 2021,
-    178: 2022,
-    195: 2023,
-    247: 2024,
-    291: 2025,
-}
+INDEX_URL = "https://proceedings.mlr.press/"
+VOLUME_LINE = re.compile(
+    r'<li>\s*<a href="(v\d+|r\d+)"[^>]*><b>Volume [^<]+</b></a>\s*Proceedings of\s+(\S+)\s+(\d{4})')
 
-pubs = []
+
+def discover_volumes():
+    """Return {volume_number: year} for every COLT volume on the PMLR index."""
+    req = urllib.request.Request(INDEX_URL, headers={'User-Agent': 'Mozilla/5.0'})
+    with urllib.request.urlopen(req) as f:
+        body = f.read().decode('utf-8', 'replace')
+    vols = {}
+    for vol_id, abbr, year in VOLUME_LINE.findall(body):
+        if abbr == 'COLT':
+            vols[int(vol_id[1:])] = int(year)
+    return vols
+
+
+COLT_VOLUMES = discover_volumes()
+print("discovered COLT volumes on PMLR: %s" % (sorted(COLT_VOLUMES.items()),))
+
+try:
+    pubs = loadPubs("pubs_colt")
+    print("loaded %d existing publications." % (len(pubs),))
+except Exception:
+    pubs = []
+existing_years = {p.get("year") for p in pubs}
 warnings = []
 
 for vol, year in sorted(COLT_VOLUMES.items()):
+    if year in existing_years:
+        continue
     url = "https://proceedings.mlr.press/v%d/" % (vol,)
     print("downloading COLT %d (vol %d)..." % (year, vol))
 

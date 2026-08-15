@@ -4,18 +4,31 @@ Standalone helper script.
 Parses CoNLL (Conference on Computational Natural Language Learning) proceedings from
 aclanthology.org, creates list of dictionaries that store information
 about each publication, and saves the result as a pickle called pubs_conll.
+
+Incremental (ACL pattern): loads the existing pubs_conll and only fetches years
+that are not present yet, so re-runs never drop earlier years or the abstracts
+added to them by add_abstracts.py. The year range ends at the CURRENT year,
+computed at runtime - no hardcoded end year.
 """
 
 import urllib.request
+from datetime import date
 from bs4 import BeautifulSoup
-from repool_util import savePubs
+from repool_util import savePubs, loadPubs
 
 BASE_URL = "https://aclanthology.org"
 
-pubs = []
+try:
+    pubs = loadPubs("pubs_conll")
+    print("loaded %d existing publications." % (len(pubs),))
+except Exception:
+    pubs = []
+existing_years = {p.get("year") for p in pubs}
 warnings = []
 
-for year in range(2000, 2027):
+for year in range(2000, date.today().year + 1):
+    if year in existing_years:
+        continue
     url = "%s/events/conll-%d/" % (BASE_URL, year)
     print("downloading CoNLL %d..." % (year,))
 

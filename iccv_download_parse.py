@@ -9,8 +9,9 @@ ICCV occurs every 2 years (odd years only).
 """
 
 import urllib.request
+from datetime import date
 from bs4 import BeautifulSoup
-from repool_util import savePubs
+from repool_util import savePubs, loadPubs
 
 BASE_URL = "https://openaccess.thecvf.com"
 
@@ -99,10 +100,19 @@ def parse_papers(html, venue, year):
     return results
 
 
-pubs = []
+# Incremental: keep already-scraped years (and their abstracts); only
+# missing years are fetched.
+try:
+    pubs = loadPubs("pubs_iccv")
+    print("loaded %d existing publications." % (len(pubs),))
+except Exception:
+    pubs = []
+existing_years = {p.get("year") for p in pubs}
 warnings = []
 
-for year in range(2013, 2026, 2):  # odd years only
+for year in range(2013, date.today().year + 1, 2):  # odd years only
+    if year in existing_years:
+        continue
     print("downloading ICCV %d..." % (year,))
 
     try:

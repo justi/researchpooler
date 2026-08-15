@@ -7,6 +7,7 @@ about each publication, and saves the result as a pickle called pubs_acl.
 """
 
 import urllib.request
+from datetime import date
 from bs4 import BeautifulSoup
 from repool_util import savePubs, loadPubs
 
@@ -19,7 +20,7 @@ except (FileNotFoundError, EOFError):
 existing_years = {p.get("year") for p in pubs}
 warnings = []
 
-for year in range(2000, 2027):
+for year in range(2000, date.today().year + 1):
     if year in existing_years:
         print("ACL %d already present, skipping." % (year,))
         continue

@@ -16,14 +16,20 @@ replies attached to each blind submission.
 """
 
 import urllib.request
+from datetime import date
 import urllib.parse
 import json
 import time
-from repool_util import savePubs
+from repool_util import savePubs, loadPubs
 
 OPENREVIEW_V1 = "https://api.openreview.net"
 OPENREVIEW_V2 = "https://api2.openreview.net"
-HEADERS = {'User-Agent': 'Mozilla/5.0'}
+HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Accept': 'application/json',
+    'Origin': 'https://openreview.net',
+    'Referer': 'https://openreview.net/',
+}
 PAGE_SIZE = 1000
 
 
@@ -228,10 +234,19 @@ def fetch_iclr_v1_decisions(year):
 # Main
 # --------------------------------------------------------------------------
 
-pubs = []
+# Incremental: keep already-scraped years (and their abstracts); only
+# missing years are fetched.
+try:
+    pubs = loadPubs("pubs_iclr")
+    print("loaded %d existing publications." % (len(pubs),))
+except Exception:
+    pubs = []
+existing_years = {p.get("year") for p in pubs}
 warnings = []
 
-for year in range(2018, 2026):
+for year in range(2018, date.today().year + 1):
+    if year in existing_years:
+        continue
     print("downloading proceedings from ICLR %d..." % year)
 
     try:
