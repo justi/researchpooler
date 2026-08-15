@@ -7,16 +7,16 @@ about each publication, and saves the result as a pickle called pubs_acl.
 """
 
 import urllib.request
-from datetime import date
 from bs4 import BeautifulSoup
-from repool_util import savePubs, loadPubsIncremental
+from repool_util import savePubs, loadPubsIncremental, scrapeYears
 
 BASE_URL = "https://aclanthology.org"
 
 pubs, existing_keys, existing_years = loadPubsIncremental("pubs_acl")
 warnings = []
 
-for year in range(2000, date.today().year + 1):
+FIRST_YEAR = 2000  # earliest edition available at the source
+for year in scrapeYears(FIRST_YEAR):
     if year in existing_years:
         print("ACL %d already present, skipping." % (year,))
         continue

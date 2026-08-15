@@ -16,11 +16,10 @@ replies attached to each blind submission.
 """
 
 import urllib.request
-from datetime import date
 import urllib.parse
 import json
 import time
-from repool_util import savePubs, loadPubsIncremental
+from repool_util import savePubs, loadPubsIncremental, scrapeYears
 
 OPENREVIEW_V1 = "https://api.openreview.net"
 OPENREVIEW_V2 = "https://api2.openreview.net"
@@ -237,7 +236,8 @@ def fetch_iclr_v1_decisions(year):
 pubs, existing_keys, existing_years = loadPubsIncremental("pubs_iclr")
 warnings = []
 
-for year in range(2018, date.today().year + 1):
+FIRST_YEAR = 2018  # earliest edition available at the source
+for year in scrapeYears(FIRST_YEAR):
     if year in existing_years:
         continue
     print("downloading proceedings from ICLR %d..." % year)

@@ -7,16 +7,16 @@ the result as a pickle called pubs_interspeech.
 """
 
 import urllib.request
-from datetime import date
 from bs4 import BeautifulSoup
-from repool_util import savePubs, loadPubsIncremental, addPub
+from repool_util import savePubs, loadPubsIncremental, addPub, scrapeYears
 
 BASE_URL = "https://www.isca-archive.org"
 
 pubs, existing_keys, existing_years = loadPubsIncremental("pubs_interspeech")
 warnings = []
 
-for year in range(2016, date.today().year + 1):
+FIRST_YEAR = 2016  # earliest edition available at the source
+for year in scrapeYears(FIRST_YEAR):
     url = "%s/interspeech_%d/" % (BASE_URL, year)
     print("downloading INTERSPEECH %d..." % (year,))
 

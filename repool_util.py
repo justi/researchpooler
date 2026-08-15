@@ -119,3 +119,13 @@ def discoverPmlrVolumes(abbr):
     vols = {int(v[1:]): int(y) for v, a, y in line.findall(body) if a == abbr}
     print("discovered %s volumes on PMLR: %s" % (abbr, sorted(vols.items())))
     return vols
+
+def scrapeYears(first_year, step=1):
+    """
+    Years to scrape: from a conference's first available edition through the
+    CURRENT year, computed at run time - never a hardcoded maximum.
+    first_year: int; step: int (2 for biennial venues)
+    returns range
+    """
+    from datetime import date
+    return range(first_year, date.today().year + 1, step)

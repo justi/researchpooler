@@ -9,15 +9,15 @@ pubs_eacl.
 
 import urllib.request
 from bs4 import BeautifulSoup
-from datetime import date
-from repool_util import savePubs, loadPubsIncremental, addPub
+from repool_util import savePubs, loadPubsIncremental, addPub, scrapeYears
 
 BASE_URL = "https://aclanthology.org"
 
 pubs, existing_keys, existing_years = loadPubsIncremental("pubs_eacl")
 warnings = []
 
-for year in range(2000, date.today().year + 1):
+FIRST_YEAR = 2000  # earliest edition available at the source
+for year in scrapeYears(FIRST_YEAR):
     url = "%s/events/eacl-%d/" % (BASE_URL, year)
     print("downloading EACL %d..." % (year,))
 

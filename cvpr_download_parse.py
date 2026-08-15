@@ -7,9 +7,8 @@ the result as a pickle in current directory called pubs_cvpr.
 """
 
 import urllib.request
-from datetime import date
 from bs4 import BeautifulSoup
-from repool_util import savePubs, loadPubsIncremental
+from repool_util import savePubs, loadPubsIncremental, scrapeYears
 
 BASE_URL = "https://openaccess.thecvf.com"
 
@@ -110,7 +109,8 @@ def parse_papers(html, venue, year):
 pubs, existing_keys, existing_years = loadPubsIncremental("pubs_cvpr")
 warnings = []
 
-for year in range(2013, date.today().year + 1):
+FIRST_YEAR = 2013  # earliest edition available at the source
+for year in scrapeYears(FIRST_YEAR):
     if year in existing_years:
         continue
     print("downloading CVPR %d..." % (year,))
