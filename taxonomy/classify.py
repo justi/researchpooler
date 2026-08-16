@@ -40,6 +40,7 @@ CONFIG_PATH = os.path.join(TAXONOMY_DIR, "config.yaml")
 PG_TAXONOMY_PATH = os.path.join(TAXONOMY_DIR, "taxonomy_paths_from_pg.json")
 BATCH_SIZE = 5  # papers per API call
 CHECKPOINT_EVERY = 5  # save after every N batches
+MAX_CONSECUTIVE_FAILURES = 5  # abort the conference when the API path is down
 
 
 def load_taxonomy_config():
@@ -325,6 +326,7 @@ def classify_conference(conf_name, limit=None, resume=False, abstract_only=False
 
     print("%s: %d papers to classify (%d already done)" % (
         conf_name, len(remaining), len(classified)))
+    consecutive_failures = 0
 
     # Collect existing keywords for normalization dedup
     kw_set = set(existing_keywords) if existing_keywords else set()
@@ -378,6 +380,24 @@ def classify_conference(conf_name, limit=None, resume=False, abstract_only=False
                 print("    pruned to %d topics (%s)" % (len(batch_topics), ", ".join(paper_domains)))
 
         result = classify_batch(papers_data, batch_topics)
+        if result is None:
+            # The opencode->Zen path fails in EPISODES (instant server
+            # errors or hangs) - a single retry after a pause rides out
+            # blips, and a run of consecutive dead batches means the
+            # episode is on: abort (checkpointed - rerun resumes) instead
+            # of grinding hours of timeouts like Interspeech 2025 did.
+            print("  batch failed - retrying once in 15s...")
+            time.sleep(15)
+            result = classify_batch(papers_data, batch_topics)
+        if result is None:
+            consecutive_failures += 1
+            if consecutive_failures >= MAX_CONSECUTIVE_FAILURES:
+                print("  %d consecutive failed batches - the API path is"
+                      " down, aborting %s (resume later with --resume)"
+                      % (consecutive_failures, conf_name))
+                break
+        else:
+            consecutive_failures = 0
 
         if result and 'papers' in result:
             for item in result['papers']:
