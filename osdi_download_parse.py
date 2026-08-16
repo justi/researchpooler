@@ -13,7 +13,8 @@ import urllib.request
 import re
 import time
 from bs4 import BeautifulSoup
-from repool_util import savePubs
+from datetime import date
+from repool_util import savePubs, loadPubsIncremental, addPub
 
 BASE_URL = "https://www.usenix.org"
 UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
@@ -22,12 +23,12 @@ UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
 
 # OSDI years with parseable technical-sessions pages on usenix.org.
 # Biennial (even) 2012-2020, then annual 2021 onward.
-OSDI_YEARS = list(range(2012, 2020, 2)) + list(range(2020, 2026))
+OSDI_YEARS = list(range(2012, 2020, 2)) + list(range(2020, date.today().year + 1))
 
 # Delay between HTTP requests (seconds) to avoid rate-limiting.
 REQUEST_DELAY = 4
 
-pubs = []
+pubs, existing_keys, existing_years = loadPubsIncremental("pubs_osdi")
 warnings = []
 
 
@@ -72,6 +73,8 @@ def parse_authors_from_field(field_div):
 
 
 for year in OSDI_YEARS:
+    if year in existing_years:
+        continue
     slug = "osdi%d" % (year % 100)
     url = "%s/conference/%s/technical-sessions" % (BASE_URL, slug)
     venue = "OSDI %d" % year
@@ -142,7 +145,7 @@ for year in OSDI_YEARS:
 
         new_pub['venue'] = venue
         new_pub['year'] = year
-        pubs.append(new_pub)
+        addPub(pubs, existing_keys, new_pub)
 
     print("read in %d publications for %s." % (len(pubs) - old_count, venue))
     time.sleep(REQUEST_DELAY)

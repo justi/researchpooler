@@ -9,21 +9,24 @@ in current directory called pubs_rss.
 
 import urllib.request
 from bs4 import BeautifulSoup
-from repool_util import savePubs
+from datetime import date
+from repool_util import savePubs, loadPubsIncremental, addPub
 
 BASE_URL = "https://www.roboticsproceedings.org"
 
 # RSS I (2005) through RSS XXI (2025)
 RSS_EDITIONS = {}
-for n in range(1, 22):
+for n in range(1, date.today().year - 2003):
     year = 2004 + n
     key = "rss%02d" % n
     RSS_EDITIONS[key] = year
 
-pubs = []
+pubs, existing_keys, existing_years = loadPubsIncremental("pubs_rss")
 warnings = []
 
 for edition, year in sorted(RSS_EDITIONS.items(), key=lambda x: x[1]):
+    if year in existing_years:
+        continue
     url = "%s/%s/index.html" % (BASE_URL, edition)
     print("downloading RSS %d (%s)..." % (year, edition))
 
@@ -87,7 +90,7 @@ for edition, year in sorted(RSS_EDITIONS.items(), key=lambda x: x[1]):
 
         new_pub['venue'] = venue
         new_pub['year'] = year
-        pubs.append(new_pub)
+        addPub(pubs, existing_keys, new_pub)
 
     print("read in %d publications for RSS %d." % (len(pubs) - old_count, year))
 
