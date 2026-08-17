@@ -16,11 +16,12 @@ annual from 2016 onward.  Years that return 404 are silently skipped.
 import urllib.request
 import re
 from bs4 import BeautifulSoup
-from repool_util import savePubs
+from datetime import date
+from repool_util import savePubs, loadPubsIncremental, addPub
 
 BASE_URL = "https://www.ijcai.org"
 
-YEARS = list(range(2013, 2026))
+YEARS = list(range(2013, date.today().year + 1))
 
 
 def fetch(url):
@@ -156,10 +157,12 @@ def parse_old_format(soup, year):
     return papers
 
 
-pubs = []
+pubs, existing_keys, existing_years = loadPubsIncremental("pubs_ijcai")
 warnings = []
 
 for year in YEARS:
+    if year in existing_years:
+        continue
     url = "%s/proceedings/%d" % (BASE_URL, year)
     print("downloading IJCAI %d..." % year)
 
@@ -184,7 +187,8 @@ for year in YEARS:
     else:
         papers = parse_old_format(soup, year)
 
-    pubs.extend(papers)
+    for new_pub in papers:
+        addPub(pubs, existing_keys, new_pub)
     print("  read in %d publications for IJCAI %d." % (
         len(pubs) - old_count, year))
 

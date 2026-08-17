@@ -9,7 +9,8 @@ each publication, and saves the result as a pickle called pubs_jmlr.
 import re
 import urllib.request
 from bs4 import BeautifulSoup, NavigableString
-from repool_util import savePubs
+from datetime import date
+from repool_util import savePubs, loadPubsIncremental, addPub
 
 BASE_URL = "https://jmlr.org"
 
@@ -17,9 +18,12 @@ BASE_URL = "https://jmlr.org"
 # The year is extracted from each paper's metadata rather than hardcoded,
 # since the volume-to-year mapping is not perfectly regular (e.g. volumes
 # 4 and 5 both correspond to 2003).
-VOLUMES = list(range(1, 27))
+# Volume N covers year 1999+N (v27 = 2026); derived from the current year
+# so new volumes are picked up automatically. The rolling volume grows all
+# year, so there is no volume-skip - dedup below handles re-fetches.
+VOLUMES = list(range(1, date.today().year - 1998))
 
-pubs = []
+pubs, existing_keys, existing_years = loadPubsIncremental("pubs_jmlr")
 warnings = []
 
 for vol in VOLUMES:
@@ -91,7 +95,7 @@ for vol in VOLUMES:
                 break
 
         new_pub['venue'] = 'JMLR %d' % new_pub['year']
-        pubs.append(new_pub)
+        addPub(pubs, existing_keys, new_pub)
 
     added = len(pubs) - old_count
     print("read in %d publications for JMLR volume %d." % (added, vol))
