@@ -10,6 +10,9 @@ from .usenix import UsenixSource
 from .aaai import AaaiSource
 from .cvf import CvfSource
 from .rss import RssSource
+from .neurips import NeuripsSource
+from .eccv import EccvSource
+from .miccai import MiccaiSource
 
 SOURCES = {
     "acl_anthology": AclAnthologySource,
@@ -22,4 +25,7 @@ SOURCES = {
     "aaai": AaaiSource,
     "cvf": CvfSource,
     "rss": RssSource,
+    "neurips": NeuripsSource,
+    "eccv": EccvSource,
+    "miccai": MiccaiSource,
 }
